@@ -1,0 +1,13 @@
+langchain==0.2.12
+langchain-core==0.2.29
+langchain-openai==0.1.21
+langchain-chroma==0.1.2
+langchain-community==0.2.7
+langchain-unstructured==0.1.1
+langchainhub==0.1.21
+unstructured==0.15.0
+pypandoc==1.13
+nltk==3.8.1
+loguru==0.7.2
+
+
