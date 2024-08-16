@@ -9,5 +9,6 @@ unstructured==0.15.0
 pypandoc==1.13
 nltk==3.8.1
 loguru==0.7.2
+flask==3.0.3
 
 

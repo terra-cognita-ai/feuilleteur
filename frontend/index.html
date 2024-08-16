@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Query App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1c1c1c;
+            color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 30px;
+            width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ffefad;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #2c2c2c;
+            color: #fff;
+        }
+
+        button {
+            background-color: #ffefad;
+            color: #333;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        button:hover {
+            background-color: #ff9900;
+        }
+
+        .answer {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #444;
+            color: #f4f4f9;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+            color: #ffefad;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ask your book questions, stay spoiler-free.</h1>
+
+        <form id="questionForm">
+            <label for="percentage">Percentage of the book to process:</label>
+            <input type="number" id="percentage" name="percentage" min="1" max="100" value="10" required>
+
+            <label for="question">Your question:</label>
+            <input type="text" id="question" name="question" required>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        <div class="loading" id="loading">Processing your request...</div>
+        <div class="answer" id="answer"></div>
+    </div>
+
+    <script>
+        document.getElementById('questionForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const percentage = document.getElementById('percentage').value;
+            const question = document.getElementById('question').value;
+
+            const loadingElement = document.getElementById('loading');
+            const answerElement = document.getElementById('answer');
+
+            // Show the loading message
+            loadingElement.style.display = 'block';
+            answerElement.innerText = '';
+
+            const response = await fetch('http://127.0.0.1:8890/ask-question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ percentage: percentage, question: question })
+            });
+
+            const data = await response.json();
+
+            // Hide the loading message
+            loadingElement.style.display = 'none';
+
+            if (response.ok) {
+                answerElement.innerText = data.answer ? data.answer : "No answer returned.";
+            } else {
+                answerElement.innerText = data.error ? data.error : "An error occurred.";
+            }
+        });
+    </script>
+</body>
+</html>
