@@ -1,8 +1,11 @@
+import os
+
+from loguru import logger
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os
+
 from werkzeug.utils import secure_filename
-from backend.src.main import answer_question  # Replace with actual module name
+from backend.src.rag import answer_question  # Replace with actual module name
 from backend.src.parsing import extract_cover_image  # Import the parsing utility
 
 UPLOAD_FOLDER = 'data/session'
@@ -69,10 +72,15 @@ def ask_question():
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer = answer_question(file_path, percentage, question)
-        return jsonify({"answer": answer})
+        answer, docs = answer_question(file_path, percentage, question)
+        docs = [doc.page_content for doc in docs]
+
+        logger.info(f"Answer:\n{answer.content}")
+
+        return jsonify({"answer": answer.content,
+                        "documents": docs})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"An error occurred: {e}"}), 500
 
 
 if __name__ == "__main__":

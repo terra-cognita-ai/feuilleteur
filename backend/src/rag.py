@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, Tuple, List
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
@@ -15,6 +15,7 @@ from backend.src.output import format_docs
 from backend.config.config import MODEL
 
 from pypandoc.pandoc_download import download_pandoc
+
 # see the documentation how to customize the installation path
 # but be aware that you then need to include it in the `PATH`
 download_pandoc()
@@ -52,23 +53,34 @@ def build_rag_chain(result, model=MODEL):
     retriever = vectorstore.as_retriever()
     prompt = hub.pull("rlm/rag-prompt")
 
-    rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt
-            | llm
-            | StrOutputParser()
-    )
+    # Adjust the RAG chain to retrieve closest documents along with generating the answer
+    def rag_chain_with_retrieval(question: str):
+        logger.info("Retrieving closest documents...")
+        docs = retriever.get_relevant_documents(question)
+        formatted_docs = format_docs(docs)
 
-    return rag_chain
+        logger.info("Generating answer...")
+        context = {"context": formatted_docs, "question": question}
+
+        # Ensure context is passed correctly to the prompt
+        prompt_result = prompt.invoke(context)
+
+        # Ensure LLM invocation is correct
+        answer = llm.invoke(prompt_result)
+
+        # Parse the final output
+        parsed_answer = StrOutputParser().parse(answer)
+
+        return parsed_answer, docs  # Return both the answer and the closest documents
+
+    return rag_chain_with_retrieval
 
 
-def answer_question(file_path: str, percentage: int, question: str, model=MODEL) -> str:
-    """Process the EPUB and answer a question."""
+def answer_question(file_path: str, percentage: int, question: str, model=MODEL) -> Tuple[str, List[dict]]:
+    """Process the EPUB and answer a question, returning the closest vectors used."""
     result = load_and_process_epub(file_path, percentage)
     rag_chain = build_rag_chain(result, model)
 
     logger.info("Running retrieving chain...")
-    answer = rag_chain.invoke(question)
-
-    return answer
-
+    answer, closest_docs = rag_chain(question)  # Run the chain and get both answer and docs
+    return answer, closest_docs  # Return the answer and the closest vectors (documents)
