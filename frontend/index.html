@@ -16,6 +16,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
         }
 
         .container {
@@ -25,6 +26,7 @@
             padding: 30px;
             width: 400px;
             text-align: center;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -40,6 +42,7 @@
             color: #ccc;
         }
 
+        input[type="file"],
         input[type="number"],
         input[type="text"] {
             width: calc(100% - 20px);
@@ -81,10 +84,34 @@
             color: #ffefad;
             font-size: 16px;
         }
+
+        .cover-image {
+            margin-top: 20px;
+            max-width: 25%;  /* 2x smaller than the previous 50% */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <h1>Upload your book</h1>
+
+        <form id="uploadForm">
+            <label for="file">Upload your EPUB file:</label>
+            <input type="file" id="file" name="file" accept=".epub" required>
+
+            <button type="submit">Upload</button>
+        </form>
+
+        <div class="loading" id="uploadLoading">Uploading your file...</div>
+        <div class="upload-result" id="uploadResult"></div>
+        <img id="coverImage" class="cover-image" style="display:none;">
+    </div>
+
+    <div class="container" id="questionContainer" style="display:none;">
         <h1>Ask your book questions, stay spoiler-free.</h1>
 
         <form id="questionForm">
@@ -102,36 +129,49 @@
     </div>
 
     <script>
-        document.getElementById('questionForm').addEventListener('submit', async function(event) {
+        // Upload Form Submission
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            const percentage = document.getElementById('percentage').value;
-            const question = document.getElementById('question').value;
+            console.log('Form submitted');  // Debugging statement
 
-            const loadingElement = document.getElementById('loading');
-            const answerElement = document.getElementById('answer');
+            const fileInput = document.getElementById('file');
+            const loadingElement = document.getElementById('uploadLoading');
+            const uploadResultElement = document.getElementById('uploadResult');
+            const questionContainer = document.getElementById('questionContainer');
 
-            // Show the loading message
+            // Show the uploading message
             loadingElement.style.display = 'block';
-            answerElement.innerText = '';
+            uploadResultElement.innerText = '';
 
-            const response = await fetch('http://127.0.0.1:8890/ask-question', {
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('http://127.0.0.1:8890/upload-file', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ percentage: percentage, question: question })
+                body: formData
             });
+
+            console.log('Response received');  // Debugging statement
 
             const data = await response.json();
 
-            // Hide the loading message
+            // Hide the uploading message
             loadingElement.style.display = 'none';
 
             if (response.ok) {
-                answerElement.innerText = data.answer ? data.answer : "No answer returned.";
+                console.log('File uploaded successfully');  // Debugging statement
+                uploadResultElement.innerText = data.message ? data.message : "File uploaded.";
+                questionContainer.style.display = 'block';
+
+                if (data.cover_image_url) {
+                    const coverImageElement = document.getElementById('coverImage');
+                    coverImageElement.src = `http://127.0.0.1:8890${data.cover_image_url}`;
+                    coverImageElement.style.display = 'block';
+                }
             } else {
-                answerElement.innerText = data.error ? data.error : "An error occurred.";
+                uploadResultElement.innerText = data.error ? data.error : "An error occurred.";
+                console.error('Error:', data.error);  // Debugging statement
             }
         });
     </script>

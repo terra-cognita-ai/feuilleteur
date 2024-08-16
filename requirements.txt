@@ -10,5 +10,6 @@ pypandoc==1.13
 nltk==3.8.1
 loguru==0.7.2
 flask==3.0.3
+pillow==10.4.0
 
 
