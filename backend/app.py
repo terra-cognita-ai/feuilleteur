@@ -3,6 +3,7 @@ import os
 from loguru import logger
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
 from backend.src.rag import answer_question  # Replace with actual module name
@@ -73,11 +74,19 @@ def ask_question():
 
     try:
         answer, docs = answer_question(file_path, percentage, question)
-        docs = [doc.page_content for doc in docs]
 
-        logger.info(f"Answer:\n{answer.content}")
+        # Convert AIMessage to string if needed
+        if isinstance(answer, AIMessage):
+            answer_content = answer.content
+        else:
+            answer_content = str(answer)
 
-        return jsonify({"answer": answer.content,
+        # Now, `docs` contains dictionaries with 'content' and other metadata
+        docs = [{"content": doc["content"], "position": doc["position"]} for doc in docs]
+
+        logger.info(f"Answer:\n{answer_content}")
+
+        return jsonify({"answer": answer_content,
                         "documents": docs})
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500

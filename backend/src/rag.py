@@ -9,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.schema import Document
 
 from backend.src.loading import EPUBPartialLoader, EPUBProcessingConfig
 from backend.src.output import format_docs
@@ -38,13 +39,42 @@ def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage:
     return result
 
 
+
+
+def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200):
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    total_length = sum([len(doc.page_content) for doc in documents])
+    split_documents = []
+    current_position = 0
+    print("total_length",total_length)
+    for document in documents:
+        splits = splitter.split_text(document.page_content)
+        for i, split in enumerate(splits):
+            start_position = current_position
+            end_position = start_position + len(split)
+            percentage_start = (start_position / total_length) * 100
+            percentage_end = (end_position / total_length) * 100
+
+            # Move the current position forward by the chunk size minus the overlap
+            current_position += len(split) if i == 0 else (chunk_size - chunk_overlap)
+            print("current_position",current_position)
+            split_documents.append(Document(
+                page_content=split,
+                metadata={
+                    "start_percentage": percentage_start,
+                    "end_percentage": percentage_end,
+                    "source": document.metadata.get("source", "unknown")
+                }
+            ))
+
+    return split_documents
+
 def build_rag_chain(result, model=MODEL):
     """Build the RAG chain for retrieving and answering questions."""
     llm = ChatOpenAI(model=model)
 
-    logger.info("Splitting document...")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
-    splits = text_splitter.split_documents(result)
+    logger.info("Splitting document with position tracking...")
+    splits = split_documents_with_positions(result)
 
     logger.info("Populating vector store...")
     vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
@@ -53,7 +83,6 @@ def build_rag_chain(result, model=MODEL):
     retriever = vectorstore.as_retriever()
     prompt = hub.pull("rlm/rag-prompt")
 
-    # Adjust the RAG chain to retrieve closest documents along with generating the answer
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
         docs = retriever.get_relevant_documents(question)
@@ -62,16 +91,12 @@ def build_rag_chain(result, model=MODEL):
         logger.info("Generating answer...")
         context = {"context": formatted_docs, "question": question}
 
-        # Ensure context is passed correctly to the prompt
         prompt_result = prompt.invoke(context)
-
-        # Ensure LLM invocation is correct
         answer = llm.invoke(prompt_result)
-
-        # Parse the final output
         parsed_answer = StrOutputParser().parse(answer)
 
-        return parsed_answer, docs  # Return both the answer and the closest documents
+        # Return both the answer and the closest documents with position metadata
+        return parsed_answer, docs
 
     return rag_chain_with_retrieval
 
@@ -83,4 +108,16 @@ def answer_question(file_path: str, percentage: int, question: str, model=MODEL)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)  # Run the chain and get both answer and docs
-    return answer, closest_docs  # Return the answer and the closest vectors (documents)
+
+    # Include percentage positions in the returned documents
+    closest_docs_with_positions = []
+    for doc in closest_docs:
+        metadata = doc.metadata
+        position_info = f"{metadata['start_percentage']:.2f}% - {metadata['end_percentage']:.2f}%"
+        closest_docs_with_positions.append({
+            "content": doc.page_content,
+            "position": position_info,
+            "source": metadata.get("source", "unknown")
+        })
+
+    return answer, closest_docs_with_positions  # Return the answer and the closest vectors with positions
