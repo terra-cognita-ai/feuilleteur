@@ -39,6 +39,9 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
                 coverImageElement.src = `http://127.0.0.1:8890${data.cover_image_url}`;
                 coverImageElement.style.display = 'block';
             }
+
+            // Scroll to the top of the first container after upload
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             uploadResultElement.innerText = data.error ? data.error : "An error occurred.";
             console.error('Error:', data.error);  // Debugging statement
@@ -93,13 +96,40 @@ document.getElementById('questionForm').addEventListener('submit', async functio
 
             if (data.documents && data.documents.length > 0) {
                 data.documents.forEach((doc, index) => {
-                    const docElement = document.createElement('div');
-                    docElement.classList.add('context-doc');
-                    docElement.innerText = `Document ${index + 1}: ${doc}`;
-                    contextDocs.appendChild(docElement);
+                    const docWrapper = document.createElement('div');
+                    const docTitle = document.createElement('div');
+                    const docContent = document.createElement('div');
+
+                    docWrapper.classList.add('context-doc-wrapper');
+                    docTitle.classList.add('context-doc-title');
+                    docContent.classList.add('context-doc-content');
+
+                    docTitle.innerText = `Passage ${index + 1}: (click to toggle)`;
+                    docContent.innerText = doc; // Insert document content
+
+                    docContent.style.display = 'none'; // Start with content hidden
+
+                    // Add toggle functionality with scroll to view
+                    docTitle.addEventListener('click', function() {
+                        if (docContent.style.display === 'none') {
+                            docContent.style.display = 'block';
+                            docTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                            docContent.style.display = 'none';
+                        }
+                    });
+
+                    docWrapper.appendChild(docTitle);
+                    docWrapper.appendChild(docContent);
+                    contextDocs.appendChild(docWrapper);
                 });
 
                 contextContainer.style.display = 'block'; // Show the context section
+
+                // Scroll to the top of the second container after loading the context
+                setTimeout(() => {
+                    questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             }
         } else {
             answerElement.innerText = data.error ? data.error : "An error occurred.";
@@ -108,15 +138,5 @@ document.getElementById('questionForm').addEventListener('submit', async functio
     } catch (error) {
         console.error('Fetch error:', error);
         answerElement.innerText = "An error occurred during question processing.";
-    }
-});
-
-// Toggle context visibility
-document.getElementById('toggleContext').addEventListener('click', function() {
-    const contextDocs = document.getElementById('contextDocs');
-    if (contextDocs.style.display === 'none') {
-        contextDocs.style.display = 'block';
-    } else {
-        contextDocs.style.display = 'none';
     }
 });
