@@ -2,9 +2,8 @@
 document.getElementById('uploadForm').addEventListener('submit', async function(event) {
     event.preventDefault();
 
-    console.log('Upload form submitted');  // Debugging statement
-
     const fileInput = document.getElementById('file');
+    const percentageInput = document.getElementById('percentage'); // Get the percentage input
     const loadingElement = document.getElementById('uploadLoading');
     const uploadResultElement = document.getElementById('uploadResult');
     const questionContainer = document.getElementById('questionContainer');
@@ -15,6 +14,7 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
+    formData.append('percentage', percentageInput.value); // Add percentage to form data
 
     try {
         const response = await fetch('http://127.0.0.1:8890/upload-file', {
@@ -22,15 +22,12 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
             body: formData
         });
 
-        console.log('Response received');  // Debugging statement
-
         const data = await response.json();
 
         // Hide the uploading message
         loadingElement.style.display = 'none';
 
         if (response.ok) {
-            console.log('File uploaded successfully');  // Debugging statement
             uploadResultElement.innerText = data.message ? data.message : "File uploaded.";
             questionContainer.style.display = 'block';
 
@@ -39,12 +36,8 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
                 coverImageElement.src = `http://127.0.0.1:8890${data.cover_image_url}`;
                 coverImageElement.style.display = 'block';
             }
-
-            // Scroll to the top of the first container after upload
-            document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             uploadResultElement.innerText = data.error ? data.error : "An error occurred.";
-            console.error('Error:', data.error);  // Debugging statement
         }
     } catch (error) {
         console.error('Fetch error:', error);

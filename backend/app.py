@@ -6,26 +6,25 @@ from flask_cors import CORS
 from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
-from backend.src.rag import answer_question  # Replace with actual module name
-from backend.src.parsing import extract_cover_image  # Import the parsing utility
+from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
+from backend.src.parsing import extract_cover_image
 
 UPLOAD_FOLDER = 'data/session'
+VECTORS_FOLDER = 'data/vectors'
 UPLOADED_FILE_NAME = 'uploaded_book.epub'
 ALLOWED_EXTENSIONS = {'epub'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-CORS(app)  # This will enable CORS for all routes
-
+app.config['VECTORS_FOLDER'] = VECTORS_FOLDER
+CORS(app)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route('/', methods=['GET'])
 def get_status():
     return {"message": "The API is up and running."}
-
 
 @app.route('/upload-file', methods=['POST'])
 def upload_file():
@@ -41,39 +40,42 @@ def upload_file():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
+        # Get the percentage from the request
+        percentage = int(request.form.get('percentage', 100))
+
+        # Process and vectorize the EPUB file
+        logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
+        result = load_and_process_epub(file_path, percentage=percentage)
+        splits = split_documents_with_positions(result)
+        vectorize_documents(splits, app.config['VECTORS_FOLDER'])
+
         # Extract cover image
         cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
-        print(cover_image_path)
         if cover_image_path:
             cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
         else:
             cover_image_url = None
 
-        return jsonify({"message": "File uploaded successfully.", "cover_image_url": cover_image_url}), 200
+        return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
     else:
         return jsonify({"error": "File type not allowed"}), 400
-
 
 @app.route('/cover-image/<filename>', methods=['GET'])
 def serve_cover_image(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-
 @app.route('/ask-question', methods=['POST'])
 def ask_question():
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], UPLOADED_FILE_NAME)
-
-    if not os.path.exists(file_path):
+    if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], UPLOADED_FILE_NAME)):
         return jsonify({"error": "No file uploaded yet."}), 400
 
-    percentage = int(request.json.get('percentage', 10))
     question = request.json.get('question', '')
 
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer, docs = answer_question(file_path, percentage, question)
+        answer, docs = answer_question(app.config['VECTORS_FOLDER'], question)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
@@ -81,18 +83,17 @@ def ask_question():
         else:
             answer_content = str(answer)
 
-        # Now, `docs` contains dictionaries with 'content' and other metadata
         docs = [{"content": doc["content"], "position": doc["position"]} for doc in docs]
 
         logger.info(f"Answer:\n{answer_content}")
 
-        return jsonify({"answer": answer_content,
-                        "documents": docs})
+        return jsonify({"answer": answer_content, "documents": docs})
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500
-
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
+    if not os.path.exists(VECTORS_FOLDER):
+        os.makedirs(VECTORS_FOLDER)
     app.run(host='0.0.0.0', port=8890, debug=True)
