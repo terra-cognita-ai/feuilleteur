@@ -65,7 +65,7 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
 def vectorize_documents(splits: List[Document], persist_directory: str):
     """Vectorize the document splits and save them for later retrieval."""
     logger.info("Vectorizing documents...")
-    vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings(), persist_directory=persist_directory)
+    _ = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings(), persist_directory=persist_directory)
 
 def load_vectorstore(persist_directory: str):
     """Load the vector store from the persisted directory."""
@@ -79,6 +79,7 @@ def build_rag_chain(retriever, model=MODEL):
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
+        print(question)
         docs = retriever.get_relevant_documents(question)
         formatted_docs = format_docs(docs)
 
