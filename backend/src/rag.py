@@ -14,7 +14,7 @@ from langchain.schema import Document
 from backend.src.loading import EPUBPartialLoader, EPUBProcessingConfig
 from backend.src.output import format_docs
 from backend.config.config import MODEL
-
+from backend.src.prompts import basis_prompt
 from pypandoc.pandoc_download import download_pandoc
 
 # see the documentation how to customize the installation path
@@ -39,14 +39,12 @@ def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage:
     return result
 
 
-
-
 def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200):
+    #TODO: Check the position tracking, seems that the count is not fully exact (for MC 1, it adds up to 73944 while the total length is 73276
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     total_length = sum([len(doc.page_content) for doc in documents])
     split_documents = []
     current_position = 0
-    print("total_length",total_length)
     for document in documents:
         splits = splitter.split_text(document.page_content)
         for i, split in enumerate(splits):
@@ -57,7 +55,6 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
 
             # Move the current position forward by the chunk size minus the overlap
             current_position += len(split) if i == 0 else (chunk_size - chunk_overlap)
-            print("current_position",current_position)
             split_documents.append(Document(
                 page_content=split,
                 metadata={
@@ -81,7 +78,8 @@ def build_rag_chain(result, model=MODEL):
 
     logger.info("Building retrieving chain...")
     retriever = vectorstore.as_retriever()
-    prompt = hub.pull("rlm/rag-prompt")
+    #prompt = hub.pull("rlm/rag-prompt")
+    prompt = basis_prompt
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")

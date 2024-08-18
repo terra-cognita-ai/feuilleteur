@@ -99,13 +99,16 @@ document.getElementById('questionForm').addEventListener('submit', async functio
                     const docWrapper = document.createElement('div');
                     const docTitle = document.createElement('div');
                     const docContent = document.createElement('div');
+                    const docPosition = document.createElement('div');
 
                     docWrapper.classList.add('context-doc-wrapper');
                     docTitle.classList.add('context-doc-title');
                     docContent.classList.add('context-doc-content');
+                    docPosition.classList.add('context-doc-position');
 
                     docTitle.innerText = `Passage ${index + 1}: (click to toggle)`;
-                    docContent.innerText = doc; // Insert document content
+                    docContent.innerText = doc.content;  // Insert document content
+                    docPosition.innerText = `Position: ${doc.position}`;  // Insert document position
 
                     docContent.style.display = 'none'; // Start with content hidden
 
@@ -113,13 +116,16 @@ document.getElementById('questionForm').addEventListener('submit', async functio
                     docTitle.addEventListener('click', function() {
                         if (docContent.style.display === 'none') {
                             docContent.style.display = 'block';
+                            docPosition.style.display = 'block';
                             docTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else {
                             docContent.style.display = 'none';
+                            docPosition.style.display = 'none';
                         }
                     });
 
                     docWrapper.appendChild(docTitle);
+                    docWrapper.appendChild(docPosition);
                     docWrapper.appendChild(docContent);
                     contextDocs.appendChild(docWrapper);
                 });
