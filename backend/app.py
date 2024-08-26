@@ -22,7 +22,16 @@ CORS(app)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/', methods=['GET'])
+@app.route('/', defaults=dict(filename=None))
+@app.route('/<path:filename>', methods=['GET', 'POST'])
+def index(filename):
+    filename = filename or 'index.html'
+    if request.method == 'GET':
+        return send_from_directory('../frontend', filename)
+
+    return jsonify(request.data)
+
+@app.route('/status', methods=['GET'])
 def get_status():
     return {"message": "The API is up and running."}
 
