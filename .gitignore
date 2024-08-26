@@ -4,3 +4,5 @@ Thumbs.db
 
 pandoc-*.pkg
 __pycache__
+data/session/*
+data/vectors/*
