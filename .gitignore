@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 .venv
+
+pandoc-*.pkg
+__pycache__
