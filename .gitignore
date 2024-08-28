@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+.venv
+
+pandoc-*.pkg
+__pycache__
+data/session/*
+data/vectors/*

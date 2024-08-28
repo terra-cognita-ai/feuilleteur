@@ -8,12 +8,15 @@ from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 
 from backend.src.loading import EPUBPartialLoader, EPUBProcessingConfig
 from backend.src.output import format_docs
 from backend.config.config import MODEL
+from backend.config.config import PROVIDER
+from backend.config.config import HOST
 from backend.src.prompts import basis_prompt, basis_prompt_2
 from pypandoc.pandoc_download import download_pandoc
 
@@ -23,6 +26,31 @@ download_pandoc()
 
 # Load environment variables
 load_dotenv(find_dotenv())
+
+def get_llm():
+    """Return an LLM."""
+    if PROVIDER == "openai":
+        return ChatOpenAI(
+            model=MODEL
+        )
+    elif PROVIDER == "ollama":
+        return ChatOllama(
+            model=MODEL,
+            base_url=HOST
+        )
+    else:
+        raise ValueError(f"Invalid provider {PROVIDER}")
+    
+def get_embedding():
+    """Return an Embedding model."""
+    if PROVIDER == "openai":
+        return OpenAIEmbeddings()
+    elif PROVIDER == "ollama":
+        return OllamaEmbeddings(
+            model="nomic-embed-text"
+        )
+    else:
+        raise ValueError(f"Invalid provider {PROVIDER}")
 
 def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage: int):
     """Load and process the EPUB file."""
@@ -65,16 +93,16 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
 def vectorize_documents(splits: List[Document], persist_directory: str):
     """Vectorize the document splits and save them for later retrieval."""
     logger.info("Vectorizing documents...")
-    _ = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings(), persist_directory=persist_directory)
+    _ = Chroma.from_documents(documents=splits, embedding=get_embedding(), persist_directory=persist_directory)
 
 def load_vectorstore(persist_directory: str):
     """Load the vector store from the persisted directory."""
     logger.info("Loading vector store...")
-    return Chroma(persist_directory=persist_directory, embedding_function=OpenAIEmbeddings())
+    return Chroma(persist_directory=persist_directory, embedding_function=get_embedding())
 
-def build_rag_chain(retriever, model=MODEL):
+def build_rag_chain(retriever):
     """Build the RAG chain for retrieving and answering questions."""
-    llm = ChatOpenAI(model=model)
+    llm = get_llm()
     prompt = basis_prompt_2
 
     def rag_chain_with_retrieval(question: str):
@@ -94,11 +122,11 @@ def build_rag_chain(retriever, model=MODEL):
 
     return rag_chain_with_retrieval
 
-def answer_question(persist_directory: str, question: str, model=MODEL) -> Tuple[str, List[dict]]:
+def answer_question(persist_directory: str, question: str) -> Tuple[str, List[dict]]:
     """Answer a question using the pre-vectorized documents."""
     vectorstore = load_vectorstore(persist_directory)
     retriever = vectorstore.as_retriever()
-    rag_chain = build_rag_chain(retriever, model)
+    rag_chain = build_rag_chain(retriever)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)
