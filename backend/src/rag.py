@@ -47,7 +47,8 @@ def get_embedding():
         return OpenAIEmbeddings()
     elif PROVIDER == "ollama":
         return OllamaEmbeddings(
-            model="nomic-embed-text"
+            model="nomic-embed-text",
+            base_url=HOST
         )
     else:
         raise ValueError(f"Invalid provider {PROVIDER}")
