@@ -53,6 +53,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
 
     const percentage = document.getElementById('percentage').value;
     const question = document.getElementById('question').value;
+    const book = document.getElementById('book').value;
 
     const loadingElement = document.getElementById('loading');
     const answerElement = document.getElementById('answer');
@@ -70,7 +71,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ percentage: percentage, question: question })
+            body: JSON.stringify({ percentage: percentage, question: question, book: book })
         });
 
         console.log('Response received');  // Debugging statement
@@ -139,3 +140,39 @@ document.getElementById('questionForm').addEventListener('submit', async functio
         answerElement.innerText = "An error occurred during question processing.";
     }
 });
+
+function createBookOptionElement(bookname) {
+    const questionForm = document.getElementById("questionForm"); 
+    const bookSelect = questionForm.querySelector('select[name="book"]'); // Get the select element
+
+    const optionElement = document.createElement('option');
+    optionElement.value = bookname; // Set the value to the book name
+    optionElement.text = bookname; // Display the book name as text
+
+    bookSelect.appendChild(optionElement); // Add the option to the select element
+}
+
+
+async function load_books_list() {
+    try {
+        const response = await fetch('http://127.0.0.1:8890/books', {
+            method: 'GET'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.books?.length > 0) {
+                data.books.forEach(book => {
+                    createBookOptionElement(book);
+                });
+                questionContainer.style.display = 'block';
+            }
+            else questionContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+}
+
+load_books_list();

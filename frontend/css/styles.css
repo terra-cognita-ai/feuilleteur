@@ -42,7 +42,8 @@ label {
 
 input[type="file"],
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+select {
     width: calc(100% - 20px);
     padding: 10px;
     margin-bottom: 20px;
