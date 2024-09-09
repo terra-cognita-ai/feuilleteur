@@ -82,10 +82,12 @@ def vectorize_documents(splits: List[Document], persist_directory: str):
     logger.info("Vectorizing documents...")
     get_vector_db(persist_directory).add_documents(splits)
 
-def build_rag_chain(retriever, source: str):
+def build_rag_chain(persist_directory: str, source: str):
     """Build the RAG chain for retrieving and answering questions."""
     llm = get_llm()
     prompt = basis_prompt_2
+    vectorstore = get_vector_db(persist_directory)
+    retriever = vectorstore.as_retriever()
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
@@ -106,9 +108,7 @@ def build_rag_chain(retriever, source: str):
 
 def answer_question(persist_directory: str, question: str, source: str) -> Tuple[str, List[dict]]:
     """Answer a question using the pre-vectorized documents."""
-    vectorstore = get_vector_db(persist_directory)
-    retriever = vectorstore.as_retriever()
-    rag_chain = build_rag_chain(retriever, source)
+    rag_chain = build_rag_chain(persist_directory, source)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)
