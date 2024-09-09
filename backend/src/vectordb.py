@@ -31,3 +31,10 @@ def get_sorted_db(persist_directory: str):
     list.sort(key = lambda x : x["metadatas"]["start_percentage"] + x["metadatas"]["end_percentage"]) # sort by midpoint
     list.sort(key = lambda x : x["metadatas"]["source"]) # sort by origin (book)
     return list
+
+def get_books_list(persist_directory: str):
+    db = get_sorted_db(persist_directory)
+    list = []
+    res = []
+    [list.append(x["metadatas"]["source"]) for x in db if x["metadatas"]["source"] not in list]
+    return list

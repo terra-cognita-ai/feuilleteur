@@ -7,7 +7,7 @@ from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
 from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question, get_vector_db
-from backend.src.vectordb import get_sorted_db
+from backend.src.vectordb import get_sorted_db, get_books_list
 from backend.src.parsing import extract_cover_image
 
 UPLOAD_FOLDER = 'data/session'
@@ -104,6 +104,10 @@ def ask_question():
 @app.route('/chroma', methods=['GET'])
 def get_db():
     return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'])}
+
+@app.route('/books', methods=['GET'])
+def get_books():
+    return {"books": get_books_list(app.config['VECTORS_FOLDER'])}
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):
