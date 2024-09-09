@@ -2,23 +2,19 @@ from pca import pca
 from langchain_chroma import Chroma
 from loguru import logger
 
+from backend.src.vectordb import get_sorted_db
+
 # TRY UMAP instead of PCA ?
 
-def get_sorted_embeddings(chroma: Chroma):
-    # Fetch embeddings from Chroma
-    data = chroma.get(include=["embeddings", "metadatas"])
-    values = data["embeddings"]
-    metadatas = data["metadatas"]
-    # Make sortable list
-    list = [[values[i], metadatas[i]["start_percentage"]] for i in range(len(values))]
-    list.sort(key = lambda x : x[1])
-    values = [x[0] for x in list]
-    return values
+def get_sorted_embeddings(persist_directory: str):
+    list = get_sorted_db(persist_directory)
+    embeddings = [x["embeddings"] for x in list]
+    return embeddings
 
-def apply_pca(chroma: Chroma):
+def apply_pca(persist_directory: str):
     # Apply PCA to the embeddings
-    values = get_sorted_embeddings(chroma)
+    values = get_sorted_embeddings(persist_directory)
     model = pca(n_components=3)
     transformed_embeddings = model.fit_transform(values)
     logger.info(transformed_embeddings["PC"])
-    return values
+    return

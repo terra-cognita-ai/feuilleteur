@@ -6,7 +6,8 @@ from flask_cors import CORS
 from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
-from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
+from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question, get_vector_db
+from backend.src.vectordb import get_sorted_db
 from backend.src.parsing import extract_cover_image
 
 UPLOAD_FOLDER = 'data/session'
@@ -99,6 +100,10 @@ def ask_question():
         return jsonify({"answer": answer_content, "documents": docs})
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500
+
+@app.route('/chroma', methods=['GET'])
+def get_db():
+    return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'], ["documents"])}
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):
