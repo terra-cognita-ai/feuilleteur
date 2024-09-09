@@ -80,12 +80,13 @@ def ask_question():
         return jsonify({"error": "No file uploaded yet."}), 400
 
     question = request.json.get('question', '')
+    book = request.json.get('book', '')
 
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer, docs = answer_question(app.config['VECTORS_FOLDER'], question)
+        answer, docs = answer_question(app.config['VECTORS_FOLDER'], question, book)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
