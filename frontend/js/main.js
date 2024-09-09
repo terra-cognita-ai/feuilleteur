@@ -29,7 +29,8 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
         if (response.ok) {
             uploadResultElement.innerText = data.message ? data.message : "File uploaded.";
-            questionContainer.style.display = 'block';
+            // questionContainer.style.display = 'block';
+            await load_books_list();
 
             if (data.cover_image_url) {
                 const coverImageElement = document.getElementById('coverImage');
@@ -128,8 +129,9 @@ document.getElementById('questionForm').addEventListener('submit', async functio
 
                 // Scroll to the top of the second container after loading the context
                 setTimeout(() => {
+                    load_books_list();
                     questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+                }, 5000);
             }
         } else {
             answerElement.innerText = data.error ? data.error : "An error occurred.";
@@ -143,14 +145,26 @@ document.getElementById('questionForm').addEventListener('submit', async functio
 
 function createBookOptionElement(bookname) {
     const questionForm = document.getElementById("questionForm"); 
-    const bookSelect = questionForm.querySelector('select[name="book"]'); // Get the select element
+    const bookSelect = questionForm.querySelector('select[name="book"]');
 
-    const optionElement = document.createElement('option');
-    optionElement.value = bookname; // Set the value to the book name
-    optionElement.text = bookname; // Display the book name as text
+    // Check if the option already exists
+    let optionExists = false;
+    for (let i = 0; i < bookSelect.options.length; i++) {
+        if (bookSelect.options[i].value === bookname) {
+            optionExists = true;
+            break;
+        }
+    }
 
-    bookSelect.appendChild(optionElement); // Add the option to the select element
+    if (!optionExists) {
+        const optionElement = document.createElement('option');
+        optionElement.value = bookname; 
+        optionElement.text = bookname; 
+
+        bookSelect.appendChild(optionElement); 
+    }
 }
+
 
 
 async function load_books_list() {
