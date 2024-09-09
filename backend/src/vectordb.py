@@ -28,6 +28,6 @@ def get_sorted_db(persist_directory: str):
     embeddings = data["embeddings"]
     # Make sortable list
     list = [{"metadatas": metadatas[i], "documents": documents[i], "embeddings": embeddings[i]} for i in range(len(metadatas))]
-    list.sort(key = lambda x : x["metadatas"]["start_percentage"])
-    list.sort(key = lambda x : x["metadatas"]["source"])
+    list.sort(key = lambda x : x["metadatas"]["start_percentage"] + x["metadatas"]["end_percentage"]) # sort by midpoint
+    list.sort(key = lambda x : x["metadatas"]["source"]) # sort by origin (book)
     return list
