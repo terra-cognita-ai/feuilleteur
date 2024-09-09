@@ -20,6 +20,10 @@ def get_vector_db(persist_directory: str):
     """Load the vector DB."""
     return Chroma(persist_directory=persist_directory, embedding_function=get_embedding_function())
 
+def clear_vector_db(persist_directory: str):
+    get_vector_db(persist_directory).delete_collection()
+    return
+
 def get_sorted_db(persist_directory: str):
     # Fetch embeddings from Chroma
     data = get_vector_db(persist_directory).get(include=["metadatas", "documents", "embeddings"])

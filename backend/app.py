@@ -6,8 +6,8 @@ from flask_cors import CORS
 from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
-from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question, get_vector_db
-from backend.src.vectordb import get_sorted_db, get_books_list
+from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
+from backend.src.vectordb import get_sorted_db, get_books_list, clear_vector_db
 from backend.src.parsing import extract_cover_image
 
 UPLOAD_FOLDER = 'data/session'
@@ -104,6 +104,10 @@ def ask_question():
 @app.route('/chroma', methods=['GET'])
 def get_db():
     return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'])}
+
+@app.route('/cleardb', methods=['GET'])
+def clear_db():
+    return {"cleardb": clear_vector_db(app.config['VECTORS_FOLDER'])}
 
 @app.route('/books', methods=['GET'])
 def get_books():
