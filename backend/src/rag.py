@@ -71,7 +71,7 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
                 metadata={
                     "start_percentage": percentage_start,
                     "end_percentage": percentage_end,
-                    "source": document.metadata.get("source", "unknown")
+                    "source": document.metadata.get("source_doc_0", "unknown")
                 }
             ))
 

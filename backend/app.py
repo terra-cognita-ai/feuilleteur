@@ -46,7 +46,7 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
 
     if file and allowed_file(file.filename):
-        filename = secure_filename(UPLOADED_FILE_NAME)
+        filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
@@ -103,7 +103,7 @@ def ask_question():
 
 @app.route('/chroma', methods=['GET'])
 def get_db():
-    return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'], ["documents"])}
+    return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'])}
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):
