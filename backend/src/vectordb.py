@@ -29,4 +29,5 @@ def get_sorted_db(persist_directory: str):
     # Make sortable list
     list = [{"metadatas": metadatas[i], "documents": documents[i], "embeddings": embeddings[i]} for i in range(len(metadatas))]
     list.sort(key = lambda x : x["metadatas"]["start_percentage"])
+    list.sort(key = lambda x : x["metadatas"]["source"])
     return list
