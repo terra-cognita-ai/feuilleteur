@@ -16,7 +16,6 @@ from backend.config.config import PROVIDER
 from backend.config.config import HOST
 from backend.src.prompts import basis_prompt, basis_prompt_2
 from backend.src.vectordb import get_vector_db
-from backend.src.pca import apply_pca
 from pypandoc.pandoc_download import download_pandoc
 
 # see the documentation how to customize the installation path
@@ -110,8 +109,6 @@ def answer_question(persist_directory: str, question: str) -> Tuple[str, List[di
     vectorstore = get_vector_db(persist_directory)
     retriever = vectorstore.as_retriever()
     rag_chain = build_rag_chain(retriever)
-
-    apply_pca(persist_directory)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)
