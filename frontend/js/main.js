@@ -14,7 +14,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
-    formData.append('percentage', percentageInput.value); // Add percentage to form data
 
     try {
         const response = await fetch('http://127.0.0.1:8890/upload-file', {

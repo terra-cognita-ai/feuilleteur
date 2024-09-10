@@ -84,12 +84,12 @@ def vectorize_documents(splits: List[Document]):
     clear_book(source)
     get_vector_db(source).add_documents(splits)
 
-def build_rag_chain(source: str):
+def build_rag_chain(source: str, percentage: int):
     """Build the RAG chain for retrieving and answering questions."""
     llm = get_llm()
     prompt = basis_prompt_2
     vectorstore = get_vector_db(source)
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_kwargs={"filter":{"end_percentage": {"$lt": percentage}}})
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
@@ -110,9 +110,9 @@ def build_rag_chain(source: str):
 
     return rag_chain_with_retrieval
 
-def answer_question(question: str, source: str) -> Tuple[str, List[dict]]:
+def answer_question(question: str, source: str, percentage: int) -> Tuple[str, List[dict]]:
     """Answer a question using the pre-vectorized documents."""
-    rag_chain = build_rag_chain(source)
+    rag_chain = build_rag_chain(source, percentage)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)

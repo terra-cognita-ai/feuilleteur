@@ -81,12 +81,13 @@ def ask_question():
 
     question = request.json.get('question', '')
     book = request.json.get('book', '')
+    percentage = int(request.json.get('percentage', ''))
 
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer, docs = answer_question(question, book)
+        answer, docs = answer_question(question, book, percentage)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
