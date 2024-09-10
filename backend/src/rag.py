@@ -87,12 +87,14 @@ def build_rag_chain(persist_directory: str, source: str):
     llm = get_llm()
     prompt = basis_prompt_2
     vectorstore = get_vector_db(persist_directory)
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_kwargs={"filter":{"source": {"$in": [source]}}})
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
+        logger.info(source)
         print(question)
-        docs = retriever.get_relevant_documents(question, metadata = {"source": source})
+        docs = retriever.get_relevant_documents(question)
+        # docs = retriever.invoke(question)
         formatted_docs = format_docs(docs)
 
         logger.info("Generating answer...")
