@@ -8,14 +8,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Upload your book</h1>
+        <h1>Upload your books</h1>
 
         <form id="uploadForm">
             <label for="file">Upload your EPUB file:</label>
             <input type="file" id="file" name="file" accept=".epub" required>
-
-            <label for="percentage">Percentage of the book to process:</label>
-            <input type="number" id="percentage" name="percentage" min="1" max="100" value="100" required>
 
             <button type="submit">Upload</button>
         </form>
@@ -31,10 +28,13 @@
         <form id="questionForm">
             <!-- Removed the percentage field from here -->
 
-            <label for="book">The Book:</label>
+            <label for="book">Select Book:</label>
             <select id="book" name="book">
             </select>
-            
+
+            <label for="percentage">Percentage of the book to process:</label>
+            <input type="number" id="percentage" name="percentage" min="1" max="100" value="100" required>
+
             <label for="question">Your question:</label>
             <input type="text" id="question" name="question" required>
 

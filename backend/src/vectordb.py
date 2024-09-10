@@ -4,6 +4,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
 from backend.config.config import PROVIDER, HOST
 
+VECTORS_FOLDER = 'data/vectors'
+
 def get_embedding_function():
     """Return an Embedding model."""
     if PROVIDER == "openai":
@@ -16,17 +18,19 @@ def get_embedding_function():
     else:
         raise ValueError(f"Invalid provider {PROVIDER}")
 
-def get_vector_db(persist_directory: str):
+def get_vector_db(collection: str):
     """Load the vector DB."""
-    return Chroma(persist_directory=persist_directory, embedding_function=get_embedding_function())
+    return Chroma(persist_directory=VECTORS_FOLDER, embedding_function=get_embedding_function(), collection_name=collection)
 
-def clear_vector_db(persist_directory: str):
-    get_vector_db(persist_directory).delete_collection()
+def clear_vector_db():
+    books = get_books_list()
+    for book in books:
+        get_vector_db(book).delete_collection()
     return
 
-def get_sorted_db(persist_directory: str):
+def get_sorted_db(collection: str):
     # Fetch embeddings from Chroma
-    data = get_vector_db(persist_directory).get(include=["metadatas", "documents", "embeddings"])
+    data = get_vector_db(collection).get(include=["metadatas", "documents", "embeddings"])
     metadatas = data["metadatas"]
     documents = data["documents"]
     embeddings = data["embeddings"]
@@ -36,9 +40,11 @@ def get_sorted_db(persist_directory: str):
     list.sort(key = lambda x : x["metadatas"]["source"]) # sort by origin (book)
     return list
 
-def get_books_list(persist_directory: str):
-    db = get_sorted_db(persist_directory)
-    list = []
-    res = []
-    [list.append(x["metadatas"]["source"]) for x in db if x["metadatas"]["source"] not in list]
-    return list
+def get_books_list():
+    res = get_vector_db("default_collection")._client.list_collections()
+    return list(filter(lambda x: x != "default_collection", list(map(lambda x : x.name, res))))
+
+def clear_book(book_name: str):
+    db = get_vector_db(book_name)
+    db.delete_collection()
+    return
