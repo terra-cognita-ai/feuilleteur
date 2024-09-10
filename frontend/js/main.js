@@ -126,12 +126,11 @@ document.getElementById('questionForm').addEventListener('submit', async functio
                 });
 
                 contextContainer.style.display = 'block'; // Show the context section
-
+                
                 // Scroll to the top of the second container after loading the context
                 setTimeout(() => {
-                    load_books_list();
                     questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 5000);
+                }, 100);
             }
         } else {
             answerElement.innerText = data.error ? data.error : "An error occurred.";
