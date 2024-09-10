@@ -57,7 +57,7 @@ def upload_file():
         logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
         result = load_and_process_epub(file_path, percentage=percentage)
         splits = split_documents_with_positions(result)
-        vectorize_documents(splits, app.config['VECTORS_FOLDER'])
+        vectorize_documents(splits)
 
         # Extract cover image
         cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
@@ -86,7 +86,7 @@ def ask_question():
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer, docs = answer_question(app.config['VECTORS_FOLDER'], question, book)
+        answer, docs = answer_question(question, book)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
@@ -104,15 +104,16 @@ def ask_question():
 
 @app.route('/chroma', methods=['GET'])
 def get_db():
-    return {"chroma": get_sorted_db(app.config['VECTORS_FOLDER'])}
+    book = request.json.get('book', '')
+    return {"chroma": get_sorted_db(book)}
 
 @app.route('/cleardb', methods=['GET'])
 def clear_db():
-    return {"cleardb": clear_vector_db(app.config['VECTORS_FOLDER'])}
+    return {"cleardb": clear_vector_db()}
 
 @app.route('/books', methods=['GET'])
 def get_books():
-    return {"books": get_books_list(app.config['VECTORS_FOLDER'])}
+    return {"books": get_books_list()}
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):

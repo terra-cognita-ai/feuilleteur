@@ -15,7 +15,7 @@ from backend.config.config import MODEL
 from backend.config.config import PROVIDER
 from backend.config.config import HOST
 from backend.src.prompts import basis_prompt, basis_prompt_2
-from backend.src.vectordb import get_vector_db
+from backend.src.vectordb import get_vector_db, clear_book
 from pypandoc.pandoc_download import download_pandoc
 
 # see the documentation how to customize the installation path
@@ -77,17 +77,19 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
 
     return split_documents
 
-def vectorize_documents(splits: List[Document], persist_directory: str):
+def vectorize_documents(splits: List[Document]):
     """Vectorize the document splits and save them for later retrieval."""
     logger.info("Vectorizing documents...")
-    get_vector_db(persist_directory).add_documents(splits)
+    source = splits[0].metadata["source"].replace("data/session/", "").replace(".epub", "")
+    clear_book(source)
+    get_vector_db(source).add_documents(splits)
 
-def build_rag_chain(persist_directory: str, source: str):
+def build_rag_chain(source: str):
     """Build the RAG chain for retrieving and answering questions."""
     llm = get_llm()
     prompt = basis_prompt_2
-    vectorstore = get_vector_db(persist_directory)
-    retriever = vectorstore.as_retriever(search_kwargs={"filter":{"source": {"$in": [source]}}})
+    vectorstore = get_vector_db(source)
+    retriever = vectorstore.as_retriever()
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
@@ -108,9 +110,9 @@ def build_rag_chain(persist_directory: str, source: str):
 
     return rag_chain_with_retrieval
 
-def answer_question(persist_directory: str, question: str, source: str) -> Tuple[str, List[dict]]:
+def answer_question(question: str, source: str) -> Tuple[str, List[dict]]:
     """Answer a question using the pre-vectorized documents."""
-    rag_chain = build_rag_chain(persist_directory, source)
+    rag_chain = build_rag_chain(source)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)
