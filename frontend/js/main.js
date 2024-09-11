@@ -14,7 +14,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
-    formData.append('percentage', percentageInput.value); // Add percentage to form data
 
     try {
         const response = await fetch('http://127.0.0.1:8890/upload-file', {
@@ -29,7 +28,8 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
         if (response.ok) {
             uploadResultElement.innerText = data.message ? data.message : "File uploaded.";
-            questionContainer.style.display = 'block';
+            // questionContainer.style.display = 'block';
+            await load_books_list();
 
             if (data.cover_image_url) {
                 const coverImageElement = document.getElementById('coverImage');
@@ -53,6 +53,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
 
     const percentage = document.getElementById('percentage').value;
     const question = document.getElementById('question').value;
+    const book = document.getElementById('book').value;
 
     const loadingElement = document.getElementById('loading');
     const answerElement = document.getElementById('answer');
@@ -70,7 +71,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ percentage: percentage, question: question })
+            body: JSON.stringify({ percentage: percentage, question: question, book: book })
         });
 
         console.log('Response received');  // Debugging statement
@@ -124,7 +125,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
                 });
 
                 contextContainer.style.display = 'block'; // Show the context section
-
+                
                 // Scroll to the top of the second container after loading the context
                 setTimeout(() => {
                     questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -139,3 +140,51 @@ document.getElementById('questionForm').addEventListener('submit', async functio
         answerElement.innerText = "An error occurred during question processing.";
     }
 });
+
+function createBookOptionElement(bookname) {
+    const questionForm = document.getElementById("questionForm"); 
+    const bookSelect = questionForm.querySelector('select[name="book"]');
+
+    // Check if the option already exists
+    let optionExists = false;
+    for (let i = 0; i < bookSelect.options.length; i++) {
+        if (bookSelect.options[i].value === bookname) {
+            optionExists = true;
+            break;
+        }
+    }
+
+    if (!optionExists) {
+        const optionElement = document.createElement('option');
+        optionElement.value = bookname; 
+        optionElement.text = bookname; 
+
+        bookSelect.appendChild(optionElement); 
+    }
+}
+
+
+
+async function load_books_list() {
+    try {
+        const response = await fetch('http://127.0.0.1:8890/books', {
+            method: 'GET'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.books?.length > 0) {
+                data.books.forEach(book => {
+                    createBookOptionElement(book);
+                });
+                questionContainer.style.display = 'block';
+            }
+            else questionContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+}
+
+load_books_list();

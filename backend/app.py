@@ -7,6 +7,7 @@ from langchain.schema import AIMessage
 
 from werkzeug.utils import secure_filename
 from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
+from backend.src.vectordb import get_sorted_db, get_books_list, clear_vector_db
 from backend.src.parsing import extract_cover_image
 
 UPLOAD_FOLDER = 'data/session'
@@ -45,7 +46,7 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
 
     if file and allowed_file(file.filename):
-        filename = secure_filename(UPLOADED_FILE_NAME)
+        filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
@@ -56,7 +57,7 @@ def upload_file():
         logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
         result = load_and_process_epub(file_path, percentage=percentage)
         splits = split_documents_with_positions(result)
-        vectorize_documents(splits, app.config['VECTORS_FOLDER'])
+        vectorize_documents(splits)
 
         # Extract cover image
         cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
@@ -79,12 +80,14 @@ def ask_question():
         return jsonify({"error": "No file uploaded yet."}), 400
 
     question = request.json.get('question', '')
+    book = request.json.get('book', '')
+    percentage = int(request.json.get('percentage', ''))
 
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
     try:
-        answer, docs = answer_question(app.config['VECTORS_FOLDER'], question)
+        answer, docs = answer_question(question, book, percentage)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
@@ -99,6 +102,19 @@ def ask_question():
         return jsonify({"answer": answer_content, "documents": docs})
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500
+
+@app.route('/chroma', methods=['GET'])
+def get_db():
+    book = request.json.get('book', '')
+    return {"chroma": get_sorted_db(book)}
+
+@app.route('/cleardb', methods=['GET'])
+def clear_db():
+    return {"cleardb": clear_vector_db()}
+
+@app.route('/books', methods=['GET'])
+def get_books():
+    return {"books": get_books_list()}
 
 if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):

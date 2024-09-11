@@ -3,12 +3,9 @@ from typing import Union, Tuple, List
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
-from langchain import hub
-from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 
@@ -18,6 +15,7 @@ from backend.config.config import MODEL
 from backend.config.config import PROVIDER
 from backend.config.config import HOST
 from backend.src.prompts import basis_prompt, basis_prompt_2
+from backend.src.vectordb import get_vector_db, clear_book
 from pypandoc.pandoc_download import download_pandoc
 
 # see the documentation how to customize the installation path
@@ -36,18 +34,6 @@ def get_llm():
     elif PROVIDER == "ollama":
         return ChatOllama(
             model=MODEL,
-            base_url=HOST
-        )
-    else:
-        raise ValueError(f"Invalid provider {PROVIDER}")
-    
-def get_embedding():
-    """Return an Embedding model."""
-    if PROVIDER == "openai":
-        return OpenAIEmbeddings()
-    elif PROVIDER == "ollama":
-        return OllamaEmbeddings(
-            model="nomic-embed-text",
             base_url=HOST
         )
     else:
@@ -85,31 +71,32 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
                 metadata={
                     "start_percentage": percentage_start,
                     "end_percentage": percentage_end,
-                    "source": document.metadata.get("source", "unknown")
+                    "source": document.metadata.get("source_doc_0", "unknown")
                 }
             ))
 
     return split_documents
 
-def vectorize_documents(splits: List[Document], persist_directory: str):
+def vectorize_documents(splits: List[Document]):
     """Vectorize the document splits and save them for later retrieval."""
     logger.info("Vectorizing documents...")
-    _ = Chroma.from_documents(documents=splits, embedding=get_embedding(), persist_directory=persist_directory)
+    source = splits[0].metadata["source"].replace("data/session/", "").replace(".epub", "")
+    clear_book(source)
+    get_vector_db(source).add_documents(splits)
 
-def load_vectorstore(persist_directory: str):
-    """Load the vector store from the persisted directory."""
-    logger.info("Loading vector store...")
-    return Chroma(persist_directory=persist_directory, embedding_function=get_embedding())
-
-def build_rag_chain(retriever):
+def build_rag_chain(source: str, percentage: int):
     """Build the RAG chain for retrieving and answering questions."""
     llm = get_llm()
     prompt = basis_prompt_2
+    vectorstore = get_vector_db(source)
+    retriever = vectorstore.as_retriever(search_kwargs={"filter":{"end_percentage": {"$lt": percentage}}})
 
     def rag_chain_with_retrieval(question: str):
         logger.info("Retrieving closest documents...")
+        logger.info(source)
         print(question)
         docs = retriever.get_relevant_documents(question)
+        # docs = retriever.invoke(question)
         formatted_docs = format_docs(docs)
 
         logger.info("Generating answer...")
@@ -123,11 +110,9 @@ def build_rag_chain(retriever):
 
     return rag_chain_with_retrieval
 
-def answer_question(persist_directory: str, question: str) -> Tuple[str, List[dict]]:
+def answer_question(question: str, source: str, percentage: int) -> Tuple[str, List[dict]]:
     """Answer a question using the pre-vectorized documents."""
-    vectorstore = load_vectorstore(persist_directory)
-    retriever = vectorstore.as_retriever()
-    rag_chain = build_rag_chain(retriever)
+    rag_chain = build_rag_chain(source, percentage)
 
     logger.info("Running retrieving chain...")
     answer, closest_docs = rag_chain(question)
