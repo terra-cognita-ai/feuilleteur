@@ -72,7 +72,7 @@ def upload_file():
 
 @app.route('/cover-image/<filename>', methods=['GET'])
 def serve_cover_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory("../data/session", filename)
 
 @app.route('/ask-question', methods=['POST'])
 def ask_question():

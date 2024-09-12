@@ -16,7 +16,7 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     formData.append('file', fileInput.files[0]);
 
     try {
-        const response = await fetch('http://127.0.0.1:8890/upload-file', {
+        const response = await fetch('upload-file', {
             method: 'POST',
             body: formData
         });
@@ -33,7 +33,7 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
 
             if (data.cover_image_url) {
                 const coverImageElement = document.getElementById('coverImage');
-                coverImageElement.src = `http://127.0.0.1:8890${data.cover_image_url}`;
+                coverImageElement.src = `${data.cover_image_url}`;
                 coverImageElement.style.display = 'block';
             }
         } else {
@@ -66,7 +66,7 @@ document.getElementById('questionForm').addEventListener('submit', async functio
     contextContainer.style.display = 'none'; // Hide the context initially
 
     try {
-        const response = await fetch('http://127.0.0.1:8890/ask-question', {
+        const response = await fetch('ask-question', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -167,7 +167,7 @@ function createBookOptionElement(bookname) {
 
 async function load_books_list() {
     try {
-        const response = await fetch('http://127.0.0.1:8890/books', {
+        const response = await fetch('books', {
             method: 'GET'
         });
 
