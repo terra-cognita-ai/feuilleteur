@@ -6,3 +6,5 @@ pandoc-*.pkg
 __pycache__
 data/session/*
 data/vectors/*
+
+/frontend_

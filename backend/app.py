@@ -28,7 +28,7 @@ def allowed_file(filename):
 def index(filename):
     filename = filename or 'index.html'
     if request.method == 'GET':
-        return send_from_directory('../frontend', filename)
+        return send_from_directory('../frontend/build', filename)
 
     return jsonify(request.data)
 
