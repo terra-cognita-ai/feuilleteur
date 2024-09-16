@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		
+		<link href="./_app/immutable/assets/0.DOe9qGvR.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.uM6OGSNg.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/entry.CN5BGlFU.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.BjFDxd0B.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.DI6p6h1f.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.Ca89P9pl.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.X3bRfW0x.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.CdEm6MAj.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">  <header class="container" data-svelte-h="svelte-1nkwsot"><hgroup><h1>Feuilleteur</h1> <p>Ask your book questions, stay spoiler-free.</p></hgroup></header> <main class="container"> <section id="upload-form"><article><h4 data-svelte-h="svelte-1r86v61">Import Books</h4> <hr> <form><input type="file" id="file" name="file" accept=".epub"> <input type="submit" value="Import"></form></article></section></main> 
+			
+			<script>
+				{
+					__sveltekit_z07fcr = {
+						base: new URL(".", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("./_app/immutable/entry/start.uM6OGSNg.js"),
+						import("./_app/immutable/entry/app.DI6p6h1f.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
