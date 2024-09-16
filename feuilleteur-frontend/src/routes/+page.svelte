@@ -34,7 +34,7 @@
     async function postQuestion() {
         try {
             console.log(question)
-            const response = await fetch('http://127.0.0.1:8890/ask-question', {
+            const response = await fetch('ask-question', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(question)
@@ -60,7 +60,7 @@
         const formData = new FormData();
         if (fileInput.files) formData.append('file', fileInput.files[0]);
         try {
-            const response = await fetch('http://127.0.0.1:8890/upload-file', {
+            const response = await fetch('upload-file', {
                 method: 'POST',
                 body: formData
             });
@@ -78,7 +78,7 @@
 
     async function fetchBooks() {
         try {
-            const response = await fetch('http://127.0.0.1:8890/books', {
+            const response = await fetch('books', {
                 method: 'GET'
             });
 

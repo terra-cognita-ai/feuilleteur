@@ -1,6 +1,13 @@
-import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
-	plugins: [sveltekit()]
+	plugins: [sveltekit()],
+	server: {
+		proxy: {
+		  '/books': 'http://127.0.0.1:8890',
+		  '/ask-question': 'http://127.0.0.1:8890',
+		  '/upload-file': 'http://127.0.0.1:8890',
+		}
+	  }
 });
