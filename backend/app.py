@@ -102,7 +102,7 @@ def ask_question():
 
         logger.info(f"Answer:\n{answer_content}")
 
-        return jsonify({"answer": answer_content, "documents": docs})
+        return jsonify({"answer": answer_content, "documents": docs, "status": "ok"})
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500
 

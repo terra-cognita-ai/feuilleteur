@@ -24,16 +24,24 @@
 
     type Answer = {
         text: string,
-        documents: Passage[]
+        documents: Passage[],
+        status: string
     }
 
     let answer: Answer = {
         text: "",
-        documents: []
+        documents: [],
+        status: ""
     }
 
     async function postQuestion() {
         try {
+            answer = {
+                text: "",
+                documents: [],
+                status: "processing"
+            }
+
             const response = await fetch('ask-question', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -45,13 +53,14 @@
             if (response.ok) {
                 answer.text = data.answer;
                 answer.documents = data.documents;
+                answer.status = data.status;
             }
             else {
-                console.error(data.error);
+                answer.status = data.error;
             }
 
         } catch (error) {
-            console.error('Fetch error:', error);
+            answer.status = error;
         }
     }
 
@@ -127,9 +136,11 @@
                     Question
                 <input type="search" name="question" placeholder="Your Question" aria-label="Search" bind:value={question.question} />
                 </label>
-                <input type="submit" value="Submit" on:click={postQuestion}/>
+                <button aria-busy={answer.status == "processing"} on:click={postQuestion}>
+                    {answer.status == "processing" ? "Processing" : "Ask Question"}
+                </button>
             </form>
-            {#if answer.text}
+            {#if answer.status == "ok"}
                 <blockquote>
                     {answer.text}
                 </blockquote>
@@ -143,6 +154,10 @@
                     </blockquote>
                 </details>
                 {/each}
+            {:else if answer.status != ""}
+                <span>
+                    {answer.status}
+                </span>
             {/if}
         </article>
     </section>
@@ -160,7 +175,7 @@
                 <input type="submit" value="Import" on:click={postBook} />
             </form>
         {:catch error}
-            <span class="pico-color-red-500">
+            <span>
                 Server unavailable: "{error.message}"
             </span>
         {/await}
