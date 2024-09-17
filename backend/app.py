@@ -34,7 +34,10 @@ def index(filename):
 
 @app.route('/status', methods=['GET'])
 def get_status():
-    return {"message": "The API is up and running."}
+    return {
+        "message": "The API is up and running.",
+        "status": "OK"
+    }
 
 @app.route('/upload-file', methods=['POST'])
 def upload_file():

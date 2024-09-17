@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
     let books: string[] = [];
+    let status = "";
 
     onMount(fetchBooks);
 
@@ -33,7 +34,6 @@
 
     async function postQuestion() {
         try {
-            console.log(question)
             const response = await fetch('ask-question', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -91,6 +91,15 @@
             console.error('Fetch error:', error);
         }
     }
+
+    async function fetchStatus() {
+        const response = await fetch('status', {
+            method: 'GET'
+        });
+        const data = await response.json();
+        if (response.ok && data.status) return data.status;
+        else throw new Error(response.statusText);
+    }
 </script>
 
 {#if books.length > 0}
@@ -99,19 +108,25 @@
             <h4>Ask Questions</h4>
             <hr>
             <form>
-                <select name="select" aria-label="Select" required bind:value={question.book}>
-                    <option selected disabled value="">Select a book</option>
-                    {#each books as book}
-                    <option value={book}>
-                        {book}
-                    </option>
-                    {/each}
-                </select>
+                <label for="book">
+                    Book
+                    <select name="book" aria-label="Select" required bind:value={question.book}>
+                        <option selected disabled value="">Select a book</option>
+                        {#each books as book}
+                        <option value={book}>
+                            {book}
+                        </option>
+                        {/each}
+                    </select>
+                </label>
                 <label for="percentage">
                     Percentage
                     <input type="number" name="percentage" placeholder="Percentage" aria-label="Percentage" bind:value={question.percentage} min="0" max="100">
                 </label>
-                <input type="search" name="search" placeholder="Your Question" aria-label="Search" bind:value={question.question} />
+                <label for="question">
+                    Question
+                <input type="search" name="question" placeholder="Your Question" aria-label="Search" bind:value={question.question} />
+                </label>
                 <input type="submit" value="Submit" on:click={postQuestion}/>
             </form>
             {#if answer.text}
@@ -137,9 +152,17 @@
 	<article>
         <h4>Import Books</h4>
         <hr>
-        <form>
-            <input type="file" id="file" name="file" accept=".epub"/>
-            <input type="submit" value="Import" on:click={postBook} />
-        </form>
-	</article>
+        {#await fetchStatus()}
+            <span aria-busy="true">Checking server status...</span>
+        {:then status} 
+            <form>
+                <input type="file" id="file" name="file" accept=".epub"/>
+                <input type="submit" value="Import" on:click={postBook} />
+            </form>
+        {:catch error}
+            <span class="pico-color-red-500">
+                Server unavailable: "{error.message}"
+            </span>
+        {/await}
+    </article>
 </section>
