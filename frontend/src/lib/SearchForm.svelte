@@ -1,19 +1,19 @@
 <script lang="ts">
-    import { RequestStatus, type Book, type ImportRequest, type SearchRequest } from "./types";
+    import { type Book, type ImportRequest, type SearchRequest } from "./types";
 
     let searchRequest: SearchRequest = {
         search: "",
-        status: RequestStatus.idle,
+        status: "idle",
         results: []
     };
 
     let importRequest: ImportRequest = {
-        status: RequestStatus.idle
+        status: "idle"
     };
 
     async function searchBook() {
-        searchRequest.status = RequestStatus.processing;
-        importRequest.status = RequestStatus.idle;
+        searchRequest.status = "processing";
+        importRequest.status = "idle";
         searchRequest.results = [];
         const searchURL = 'https://gutendex.com/books?search=' + searchRequest.search.replaceAll(" ", "%20");
         const response = await fetch(searchURL, {
@@ -22,13 +22,13 @@
         const data = await response.json();
         if (response.ok && data.results.length > 0) {
             searchRequest.results = data.results;
-            searchRequest.status = RequestStatus.ok;
+            searchRequest.status = "ok";
         }
         else throw new Error(response.statusText);
     }
 
     async function importBook(book: Book) {
-        importRequest.status = RequestStatus.processing;
+        importRequest.status = "processing";
         searchRequest.results = [book];
         const response = await fetch('import-book', {
             method: 'POST',
@@ -39,10 +39,10 @@
         const data = await response.json();
 
         if (response.ok) {
-            importRequest.status = RequestStatus.ok;
+            importRequest.status = "ok";
         }
         else {
-            importRequest.status = RequestStatus.error;
+            importRequest.status = "error";
         }
     }
 </script>
@@ -53,8 +53,8 @@
         <hr>
         <form>
             <input type="search" name="search" placeholder="Search Book" aria-label="Search" bind:value={searchRequest.search} />
-            <button aria-busy={searchRequest.status == RequestStatus.processing} on:click={searchBook} class="full-width">
-                {searchRequest.status == RequestStatus.processing ? "Processing" : "Search"}
+            <button aria-busy={searchRequest.status == "processing"} on:click={searchBook} class="full-width">
+                {searchRequest.status == "processing" ? "Processing" : "Search"}
             </button>
         </form>
         <div>
@@ -72,8 +72,8 @@
                                 <h5>{book.title}</h5>
                                 <span>{book.authors[0].name}</span>
                             </hgroup>
-                            <button aria-busy={importRequest.status == RequestStatus.processing} on:click={()=>importBook(book)} class="full-width">
-                                {importRequest.status == RequestStatus.processing ? "Processing" : "Import"}
+                            <button aria-busy={importRequest.status == "processing"} on:click={()=>importBook(book)} class="full-width">
+                                {importRequest.status == "processing" ? "Processing" : "Import"}
                             </button>
                         </div>
                     </div>

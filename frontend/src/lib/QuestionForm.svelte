@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-    import { RequestStatus, type QuestionRequest } from "./types";
+    import { type QuestionRequest } from "./types";
 
     let books: string[] = [];
 
@@ -14,7 +14,7 @@
         answer: {
             text: "",
             documents: [],
-            status: RequestStatus.idle
+            status: "idle"
         }
     }
 
@@ -23,7 +23,7 @@
             question.answer = {
                 text: "",
                 documents: [],
-                status: RequestStatus.processing
+                status: "processing"
             }
 
             const response = await fetch('ask-question', {
@@ -44,7 +44,7 @@
             }
 
         } catch (error) {
-            question.answer.status = RequestStatus.error;
+            question.answer.status = "error";
         }
     }
 
@@ -90,11 +90,11 @@
                     Question
                 <input type="search" name="question" placeholder="Your Question" aria-label="Search" bind:value={question.question} />
                 </label>
-                <button aria-busy={question.answer.status == RequestStatus.processing} on:click={postQuestion} class="full-width">
-                    {question.answer.status == RequestStatus.processing ? "Processing" : "Ask Question"}
+                <button aria-busy={question.answer.status == "processing"} on:click={postQuestion} class="full-width">
+                    {question.answer.status == "processing" ? "Processing" : "Ask Question"}
                 </button>
             </form>
-            {#if question.answer.status == RequestStatus.ok}
+            {#if question.answer.status == "ok"}
                 <blockquote>
                     {question.answer.text}
                 </blockquote>
@@ -108,7 +108,7 @@
                     </blockquote>
                 </details>
                 {/each}
-            {:else if question.answer.status != RequestStatus.idle}
+            {:else if question.answer.status != "idle"}
                 <span>
                     {question.answer.status}
                 </span>

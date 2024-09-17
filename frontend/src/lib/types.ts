@@ -13,12 +13,7 @@ export type Book = {
     authors: Author[]
 }
 
-export enum RequestStatus {
-    idle,
-    processing,
-    ok,
-    error
-}
+export type RequestStatus = 'idle' | 'processing' | 'ok' | 'error';
 
 export type SearchRequest = {
     search: string;
