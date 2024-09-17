@@ -4,6 +4,7 @@ from loguru import logger
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from langchain.schema import AIMessage
+from urllib.request import urlretrieve
 
 from werkzeug.utils import secure_filename
 from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
@@ -72,6 +73,39 @@ def upload_file():
         return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
     else:
         return jsonify({"error": "File type not allowed"}), 400
+    
+@app.route('/import-book', methods=['POST'])
+def import_book():
+    logger.info(request.json)
+
+    title = request.json.get('title', '')
+    formats = request.json.get('formats', [])
+    url = formats['application/epub+zip']
+    
+    if not title:
+        return jsonify({"error": "No title"}), 400
+    
+    if url:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(title + '.epub'))
+        file = urlretrieve(url, file_path)
+        percentage = int(request.form.get('percentage', 100))
+
+        # Process and vectorize the EPUB file
+        logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
+        result = load_and_process_epub(file[0], percentage=percentage)
+        splits = split_documents_with_positions(result)
+        vectorize_documents(splits)
+
+        # Extract cover image
+        cover_image_path = extract_cover_image(file[0], app.config['UPLOAD_FOLDER'])
+        if cover_image_path:
+            cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
+        else:
+            cover_image_url = None
+
+        return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
+    else:
+        return jsonify({"error": "No epub URL"}), 400
 
 @app.route('/cover-image/<filename>', methods=['GET'])
 def serve_cover_image(filename):

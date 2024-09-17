@@ -9,6 +9,7 @@ export default defineConfig({
 		  '/ask-question': 'http://127.0.0.1:8890',
 		  '/upload-file': 'http://127.0.0.1:8890',
 		  '/status': 'http://127.0.0.1:8890',
+		  '/import-book': 'http://127.0.0.1:8890',
 		}
 	  }
 });
