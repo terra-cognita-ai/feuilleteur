@@ -50,66 +50,69 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
 
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-
-        # Get the percentage from the request
-        percentage = int(request.form.get('percentage', 100))
-
-        # Process and vectorize the EPUB file
-        logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
-        result = load_and_process_epub(file_path, percentage=percentage)
-        splits = split_documents_with_positions(result)
         try:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            # Get the percentage from the request
+            percentage = int(request.form.get('percentage', 100))
+
+            # Process and vectorize the EPUB file
+            logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
+            result = load_and_process_epub(file_path, percentage=percentage)
+            splits = split_documents_with_positions(result)
             vectorize_documents(splits)
+
+            # Extract cover image
+            cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
+            if cover_image_path:
+                cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
+            else:
+                cover_image_url = None
+
+            return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
         except Exception as e:
             logger.exception(e)
             return jsonify({"error": e.args}), 400
-
-        # Extract cover image
-        cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
-        if cover_image_path:
-            cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
-        else:
-            cover_image_url = None
-
-        return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
     else:
         return jsonify({"error": "File type not allowed"}), 400
     
 @app.route('/import-book', methods=['POST'])
 def import_book():
     logger.info(request.json)
+    try:
+        title = request.json.get('title', '')
+        formats = request.json.get('formats', [])
+        url = formats['application/epub+zip']
+        
+        if not title:
+            return jsonify({"error": "No title"}), 400
+        
+        if url:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(title + '.epub'))
+            file = urlretrieve(url, file_path)
+            percentage = int(request.form.get('percentage', 100))
 
-    title = request.json.get('title', '')
-    formats = request.json.get('formats', [])
-    url = formats['application/epub+zip']
-    
-    if not title:
-        return jsonify({"error": "No title"}), 400
-    
-    if url:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(title + '.epub'))
-        file = urlretrieve(url, file_path)
-        percentage = int(request.form.get('percentage', 100))
+            # Process and vectorize the EPUB file
+            logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
+            result = load_and_process_epub(file[0], percentage=percentage)
+            splits = split_documents_with_positions(result)
+            vectorize_documents(splits)
 
-        # Process and vectorize the EPUB file
-        logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
-        result = load_and_process_epub(file[0], percentage=percentage)
-        splits = split_documents_with_positions(result)
-        vectorize_documents(splits)
+            # Extract cover image
+            cover_image_path = extract_cover_image(file[0], app.config['UPLOAD_FOLDER'])
+            if cover_image_path:
+                cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
+            else:
+                cover_image_url = None
 
-        # Extract cover image
-        cover_image_path = extract_cover_image(file[0], app.config['UPLOAD_FOLDER'])
-        if cover_image_path:
-            cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
+            return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
         else:
-            cover_image_url = None
-
-        return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
-    else:
-        return jsonify({"error": "No epub URL"}), 400
+            return jsonify({"error": "No epub URL"}), 400
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({"error": e.args}), 400
 
 @app.route('/cover-image/<filename>', methods=['GET'])
 def serve_cover_image(filename):

@@ -1,5 +1,6 @@
 <script lang="ts">
     import BookCard from "./BookCard.svelte";
+	import ErrorMessage from "./ErrorMessage.svelte";
 import { type Book, type ImportRequest, type SearchRequest } from "./types";
 
     let searchRequest: SearchRequest = {
@@ -9,12 +10,14 @@ import { type Book, type ImportRequest, type SearchRequest } from "./types";
     };
 
     let importRequest: ImportRequest = {
-        status: "idle"
+        status: "idle",
+        error: ""
     };
 
     async function searchBook() {
         searchRequest.status = "processing";
         importRequest.status = "idle";
+        importRequest.error = "";
         searchRequest.results = [];
         const searchURL = 'https://gutendex.com/books?search=' + searchRequest.search.replaceAll(" ", "%20");
         const response = await fetch(searchURL, {
@@ -30,6 +33,7 @@ import { type Book, type ImportRequest, type SearchRequest } from "./types";
 
     async function importBook(book: Book) {
         importRequest.status = "processing";
+        importRequest.error = "";
         searchRequest.results = [book];
         const response = await fetch('import-book', {
             method: 'POST',
@@ -41,9 +45,11 @@ import { type Book, type ImportRequest, type SearchRequest } from "./types";
 
         if (response.ok) {
             importRequest.status = "ok";
+            setTimeout(()=>{searchRequest.results = []}, 3000);
         }
         else {
             importRequest.status = "error";
+            importRequest.error = data ? JSON.stringify(data) : response.statusText; 
         }
     }
 </script>
@@ -62,11 +68,20 @@ import { type Book, type ImportRequest, type SearchRequest } from "./types";
             {#each searchRequest.results as book}
                 <BookCard book={book}>
                     <button aria-busy={importRequest.status == "processing"} on:click={()=>importBook(book)} class="full-width">
-                        {importRequest.status == "processing" ? "Processing" : "Import"}
+                        {#if importRequest.status == "idle"}
+                            Import 
+                        {:else if importRequest.status == "processing"}
+                            Processing
+                        {:else if importRequest.status == "ok"}
+                            Success !
+                        {:else}
+                            Error
+                        {/if}
                     </button>
                 </BookCard>
             {/each}
         </div>
+        <ErrorMessage message={importRequest.error}></ErrorMessage>
     </article>
 </section>
 

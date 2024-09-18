@@ -30,6 +30,7 @@ export type SearchRequest = {
 
 export type ImportRequest = {
     status: RequestStatus;
+    error: string;
 }
 
 export type BookPassage = {
@@ -41,6 +42,7 @@ export type QuestionAnswer = {
     text: string;
     documents: BookPassage[];
     status: RequestStatus;
+    error: string;
 }
 
 export type QuestionRequest = {

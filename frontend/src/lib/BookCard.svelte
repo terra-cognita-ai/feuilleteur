@@ -16,8 +16,12 @@
     <div>
         <hgroup>
             <h5 class="text">{book.title}</h5>
-            <p>{book.authors[0].name}</p>
-            <p>Language : {book.languages.reduce((a, b) => a + ', ' + b)}</p>
+            {#if book.authors.length > 0}
+                <p class="text">{book.authors.map((b)=>b.name).reduce((a, b) => a + ', ' + b)}</p>
+            {/if}
+            {#if book.languages.length > 0}
+                <p>Language : {book.languages.reduce((a, b) => a + ', ' + b)}</p>
+            {/if}
         </hgroup>
     </div>
     <div class="end full-width">
