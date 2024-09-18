@@ -1,12 +1,8 @@
 <script lang="ts">
-	import { onMount } from "svelte";
     import { type QuestionRequest } from "./types";
 	import ErrorMessage from "./ErrorMessage.svelte";
 
-    let books: string[] = [];
-
-    onMount(getBooks);
-
+    export let books: string[] = [];
 
     let question: QuestionRequest = {
         question: "",
@@ -50,22 +46,6 @@
         } catch (error) {
             question.answer.status = "error";
             question.answer.error = String(error);
-        }
-    }
-
-    async function getBooks() {
-        try {
-            const response = await fetch('books', {
-                method: 'GET'
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (data.books?.length > 0) books = data.books;
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
         }
     }
 </script>

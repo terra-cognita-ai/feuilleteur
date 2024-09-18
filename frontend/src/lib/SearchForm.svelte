@@ -1,7 +1,10 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
     import BookCard from "./BookCard.svelte";
 	import ErrorMessage from "./ErrorMessage.svelte";
-import { type Book, type ImportRequest, type SearchRequest } from "./types";
+    import { type Book, type ImportRequest, type SearchRequest } from "./types";
+
+    const dispatch = createEventDispatcher();
 
     let searchRequest: SearchRequest = {
         search: "",
@@ -46,6 +49,7 @@ import { type Book, type ImportRequest, type SearchRequest } from "./types";
         if (response.ok) {
             importRequest.status = "ok";
             setTimeout(()=>{searchRequest.results = []}, 3000);
+            dispatch("new-book");
         }
         else {
             importRequest.status = "error";

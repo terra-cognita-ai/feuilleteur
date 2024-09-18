@@ -1,10 +1,18 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+    import type { ImportRequest } from './types';
 	import ErrorMessage from "./ErrorMessage.svelte";
 
-    let errorMessage = "";
+    const dispatch = createEventDispatcher();
+
+    let importRequest: ImportRequest = {
+        status: "idle",
+        error: ""
+    };
 
     async function postBook() {
-        errorMessage = "";
+        importRequest.status = "processing";
+        importRequest.error = "";
         const fileInput = document.getElementById('file') as HTMLInputElement;
         const formData = new FormData();
         if (fileInput.files) formData.append('file', fileInput.files[0]);
@@ -14,10 +22,16 @@
                 body: formData
             });
             const data = await response.json();
-            errorMessage = data ? JSON.stringify(data) : response.statusText;
+            if (response.ok) {
+                importRequest.status = "ok";
+                dispatch("new-book");
+            }
+            else {
+                importRequest.error = data ? JSON.stringify(data) : response.statusText;
+            }
         } 
         catch (error) {
-            errorMessage = String(error);
+            importRequest.error = String(error);
         }
     }
 
@@ -40,13 +54,30 @@
         {:then status} 
             <form>
                 <input type="file" id="file" name="file" accept=".epub"/>
-                <input type="submit" value="Import" on:click={postBook} />
+                <button aria-busy={importRequest.status == "processing"} on:click={postBook} class="full-width">
+                    {#if importRequest.status == "idle"}
+                        Upload
+                    {:else if importRequest.status == "processing"}
+                        Processing
+                    {:else if importRequest.status == "ok"}
+                        Success !
+                    {:else}
+                        Error
+                    {/if}
+                </button>
             </form>
         {:catch error}
             <span>
                 Server unavailable: "{error.message}"
             </span>
         {/await}
-        <ErrorMessage message={errorMessage}></ErrorMessage>
+        <ErrorMessage message={importRequest.error}></ErrorMessage>
     </article>
 </section>
+
+
+<style>
+    .full-width {
+        width: 100%;
+    }
+</style>
