@@ -4,13 +4,20 @@ export type Author = {
     death_year: number;
 }
 
+type Translator = Author;
+
 export type Book = {
     title: string;
     formats: {
         "image/jpeg": string;
         "application/epub+zip": string;
     };
-    authors: Author[]
+    authors: Author[];
+    translators: Translator[];
+    subjects: string[];
+    bookshelves: string[];
+    languages: string[];
+    copyright: boolean | null;
 }
 
 export type RequestStatus = 'idle' | 'processing' | 'ok' | 'error';

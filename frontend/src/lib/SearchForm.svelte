@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { type Book, type ImportRequest, type SearchRequest } from "./types";
+    import BookCard from "./BookCard.svelte";
+import { type Book, type ImportRequest, type SearchRequest } from "./types";
 
     let searchRequest: SearchRequest = {
         search: "",
@@ -57,27 +58,13 @@
                 {searchRequest.status == "processing" ? "Processing" : "Search"}
             </button>
         </form>
-        <div>
+        <div class="grid overflow-auto">
             {#each searchRequest.results as book}
-                <article>
-                    <div class="grid">
-                        <div>
-                            <img
-                            src={book.formats["image/jpeg"]}
-                            alt={book.title}
-                            />
-                        </div>
-                        <div>
-                            <hgroup>
-                                <h5>{book.title}</h5>
-                                <span>{book.authors[0].name}</span>
-                            </hgroup>
-                            <button aria-busy={importRequest.status == "processing"} on:click={()=>importBook(book)} class="full-width">
-                                {importRequest.status == "processing" ? "Processing" : "Import"}
-                            </button>
-                        </div>
-                    </div>
-                </article>
+                <BookCard book={book}>
+                    <button aria-busy={importRequest.status == "processing"} on:click={()=>importBook(book)} class="full-width">
+                        {importRequest.status == "processing" ? "Processing" : "Import"}
+                    </button>
+                </BookCard>
             {/each}
         </div>
     </article>
@@ -86,5 +73,25 @@
 <style>
     .full-width {
         width: 100%;
+    }
+    .grid {
+        grid-template-columns: repeat(4, 1fr);
+        /* grid-gap: 10px;
+        grid-auto-rows: minmax(100px, auto); */
+    }
+    @media only screen and (max-width: 1280px) {
+        .grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    @media only screen and (max-width: 1024px) {
+        .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media only screen and (max-width: 480px) {
+        .grid {
+            grid-template-columns: repeat(1, 1fr);
+        }
     }
 </style>
