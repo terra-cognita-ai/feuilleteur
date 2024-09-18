@@ -61,7 +61,11 @@ def upload_file():
         logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
         result = load_and_process_epub(file_path, percentage=percentage)
         splits = split_documents_with_positions(result)
-        vectorize_documents(splits)
+        try:
+            vectorize_documents(splits)
+        except Exception as e:
+            logger.exception(e)
+            return jsonify({"error": e.args}), 400
 
         # Extract cover image
         cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])

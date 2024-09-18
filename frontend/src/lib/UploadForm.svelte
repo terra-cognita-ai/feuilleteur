@@ -1,5 +1,10 @@
 <script lang="ts">
+	import ErrorMessage from "./ErrorMessage.svelte";
+
+    let errorMessage = "";
+
     async function postBook() {
+        errorMessage = "";
         const fileInput = document.getElementById('file') as HTMLInputElement;
         const formData = new FormData();
         if (fileInput.files) formData.append('file', fileInput.files[0]);
@@ -8,15 +13,11 @@
                 method: 'POST',
                 body: formData
             });
-
             const data = await response.json();
-            if (response.ok) {
-                // await getBooks();
-            } else {
-                console.error('Fetch error:', data.error);
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
+            errorMessage = data ? JSON.stringify(data) : response.statusText;
+        } 
+        catch (error) {
+            errorMessage = String(error);
         }
     }
 
@@ -46,5 +47,6 @@
                 Server unavailable: "{error.message}"
             </span>
         {/await}
+        <ErrorMessage message={errorMessage}></ErrorMessage>
     </article>
 </section>

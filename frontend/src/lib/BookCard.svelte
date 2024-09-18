@@ -3,7 +3,7 @@
     export let book: Book;
 </script>
 
-<article class = "flex">
+<article class="flex">
     <figure class="full-width flex-grow">
         {#if book.formats["image/jpeg"]}
         <img
@@ -15,7 +15,7 @@
     </figure>
     <div>
         <hgroup>
-            <h5>{book.title}</h5>
+            <h5 class="text">{book.title}</h5>
             <p>{book.authors[0].name}</p>
             <p>Language : {book.languages.reduce((a, b) => a + ', ' + b)}</p>
         </hgroup>
@@ -38,8 +38,21 @@
     }
     .flex-grow {
         flex-grow: 1;
+        align-content: center;
     }
     .end {
         align-self: flex-end;
+    }
+    .text{
+        text-overflow: ellipsis;
+        cursor: pointer;          
+        /* word-break: break-all; */
+        overflow:hidden;         
+        white-space: nowrap;
+    }
+    .text:hover{
+        overflow: visible;        
+        white-space: normal;
+        /* height:auto; */
     }
 </style>

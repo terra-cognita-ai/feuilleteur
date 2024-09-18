@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
     import { type QuestionRequest } from "./types";
+	import ErrorMessage from "./ErrorMessage.svelte";
 
     let books: string[] = [];
 
@@ -14,7 +15,8 @@
         answer: {
             text: "",
             documents: [],
-            status: "idle"
+            status: "idle",
+            error: ""
         }
     }
 
@@ -23,7 +25,8 @@
             question.answer = {
                 text: "",
                 documents: [],
-                status: "processing"
+                status: "processing",
+                error: ""
             }
 
             const response = await fetch('ask-question', {
@@ -40,11 +43,13 @@
                 question.answer.status = data.status;
             }
             else {
-                question.answer.status = data.error;
+                question.answer.error = data ? JSON.stringify(data) : response.statusText;
+                question.answer.status = "error";
             }
 
         } catch (error) {
             question.answer.status = "error";
+            question.answer.error = String(error);
         }
     }
 
@@ -108,11 +113,8 @@
                     </blockquote>
                 </details>
                 {/each}
-            {:else if question.answer.status != "idle"}
-                <span>
-                    {question.answer.status}
-                </span>
             {/if}
+            <ErrorMessage message={question.answer.error}></ErrorMessage>
         </article>
     </section>
 {/if}
