@@ -1,6 +1,7 @@
 <script lang="ts">
     import { type QuestionRequest } from "./types";
 	import ErrorMessage from "./ErrorMessage.svelte";
+	import Answer from "./Answer.svelte";
 
     export let books: string[] = [];
 
@@ -79,23 +80,9 @@
                     {question.answer.status == "processing" ? "Processing" : "Ask Question"}
                 </button>
             </form>
-            {#if question.answer.status == "ok"}
-                <blockquote>
-                    {question.answer.text}
-                </blockquote>
-                {#each question.answer.documents as document}
-                <details>
-                    <summary>
-                        {document.position}
-                    </summary>
-                    <blockquote>
-                        {document.content}
-                    </blockquote>
-                </details>
-                {/each}
-            {/if}
             <ErrorMessage message={question.answer.error}></ErrorMessage>
         </article>
+        <Answer answer={question.answer}></Answer>
     </section>
 {/if}
 
