@@ -20,10 +20,6 @@ ALLOWED_EXTENSIONS = {'epub'}
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return RedirectResponse("/index.html")
-
 @app.post("/upload-file")
 async def upload_file(file: UploadFile = File(...)):
     if file.filename == "":
