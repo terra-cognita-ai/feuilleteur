@@ -6,5 +6,10 @@ A simple rag-based interface for spoiler-free retrieval.
 - Activate it : `source .venv/bin/activate`
 - Install requirements : `python3 -m pip install -r requirements.txt`
 
-## Run
-- Run backend : `python3 -m backend.app`
+## Dev Backend
+- Run backend : `fastapi dev backend/app.py`
+
+## Dev Frontend
+- Enter frontend directory : `cd frontend`
+- Run frontend : `npm run dev`
+- Compile frontend : `npm run build`
