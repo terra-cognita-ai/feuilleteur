@@ -37,7 +37,7 @@
             if (response.ok) {
                 question.answer.text = data.answer;
                 question.answer.documents = data.documents;
-                question.answer.status = data.status;
+                question.answer.status = "ok";
             }
             else {
                 question.answer.error = data ? JSON.stringify(data) : response.statusText;
