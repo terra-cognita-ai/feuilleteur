@@ -2,6 +2,7 @@
     import { type QuestionRequest } from "./types";
 	import ErrorMessage from "./ErrorMessage.svelte";
 	import Answer from "./Answer.svelte";
+    import { BackendService } from "../client";
 
     export let books: string[] = [];
 
@@ -25,22 +26,15 @@
                 status: "processing",
                 error: ""
             }
+            const response = await BackendService.askQuestion({body:question});
 
-            const response = await fetch('ask-question', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(question)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                question.answer.text = data.answer;
-                question.answer.documents = data.documents;
+            if (response.data?.answer) {
+                question.answer.text = response.data.answer;
+                question.answer.documents = response.data.documents;
                 question.answer.status = "ok";
             }
             else {
-                question.answer.error = data ? JSON.stringify(data) : response.statusText;
+                question.answer.error = String(response.error);
                 question.answer.status = "error";
             }
 

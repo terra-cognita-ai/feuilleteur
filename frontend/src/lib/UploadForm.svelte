@@ -2,6 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import type { ImportRequest } from './types';
 	import ErrorMessage from "./ErrorMessage.svelte";
+	import { BackendService } from '../client';
 
     const dispatch = createEventDispatcher();
 
@@ -11,37 +12,30 @@
     };
 
     async function postBook() {
-        importRequest.status = "processing";
-        importRequest.error = "";
         const fileInput = document.getElementById('file') as HTMLInputElement;
-        const formData = new FormData();
-        if (fileInput.files) formData.append('file', fileInput.files[0]);
-        try {
-            const response = await fetch('upload-file', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            if (response.ok) {
-                importRequest.status = "ok";
-                dispatch("new-book");
+        if (fileInput.files) {
+            importRequest.status = "processing";
+            importRequest.error = "";
+            try {
+                const response = await BackendService.uploadFile({body:{file:fileInput.files[0]}});
+                if (response.response.ok) {
+                    importRequest.status = "ok";
+                    dispatch("new-book");
+                }
+                else {
+                    importRequest.error = String(response.error);
+                }
+            } 
+            catch (error) {
+                importRequest.error = String(error);
             }
-            else {
-                importRequest.error = data ? JSON.stringify(data) : response.statusText;
-            }
-        } 
-        catch (error) {
-            importRequest.error = String(error);
         }
     }
 
     async function getStatus() {
-        const response = await fetch('status', {
-            method: 'GET'
-        });
-        const data = await response.json();
-        if (response.ok && data.status) return data.status;
-        else throw new Error(response.statusText);
+        const response = await BackendService.getStatus();
+        if (response.response.ok) return response.data;
+        else throw new Error(response.response.statusText);
     }
 </script>
 

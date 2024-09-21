@@ -3,6 +3,7 @@
 	import QuestionForm from "$lib/QuestionForm.svelte";
 	import SearchForm from "$lib/SearchForm.svelte";
 	import UploadForm from "$lib/UploadForm.svelte";
+    import { BackendService } from "../client";
 
     let books: string[] = [];
 
@@ -10,14 +11,12 @@
 
     async function getBooks() {
         try {
-            const response = await fetch('books', {
-                method: 'GET'
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (data.books?.length > 0) books = data.books;
+            const response = await BackendService.getBooks();
+            if (response.data && response.data.length > 0) {
+                books = response.data;
+            }
+            else {
+                console.error('No books found:', response.error);
             }
         } catch (error) {
             console.error('Fetch error:', error);

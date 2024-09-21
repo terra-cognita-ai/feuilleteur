@@ -91,8 +91,16 @@ class Question(BaseModel):
     book: str
     percentage: int = 100
 
+class Document(BaseModel):
+    content: str
+    position: str        
+
+class Answer(BaseModel):
+    answer: str
+    documents: list[Document]
+
 @app.post("/ask-question")
-async def ask_question(question: Question):
+async def ask_question(question: Question) -> Answer:
     try:
         answer, docs = answer_question(question.question, question.book, question.percentage)
 
@@ -119,8 +127,8 @@ async def clear_db():
     return {"cleardb": clear_vector_db()}
 
 @app.get("/books")
-async def get_books():
-    return {"books": get_books_list()}
+async def get_books() -> list[str]:
+    return get_books_list()
 
 @app.get("/status")
 async def get_status():

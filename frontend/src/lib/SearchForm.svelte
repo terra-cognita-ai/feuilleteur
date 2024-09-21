@@ -3,6 +3,7 @@
     import BookCard from "./BookCard.svelte";
 	import ErrorMessage from "./ErrorMessage.svelte";
     import { type Book, type ImportRequest, type SearchRequest } from "./types";
+    import { BackendService } from "../client";
 
     const dispatch = createEventDispatcher();
 
@@ -38,22 +39,15 @@
         importRequest.status = "processing";
         importRequest.error = "";
         searchRequest.results = [book];
-        const response = await fetch('import-book', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(book)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
+        const response = await BackendService.importBook({body:book});
+        if (response.response.ok) {
             importRequest.status = "ok";
             setTimeout(()=>{searchRequest.results = []}, 3000);
             dispatch("new-book");
         }
         else {
             importRequest.status = "error";
-            importRequest.error = data ? JSON.stringify(data) : response.statusText; 
+            importRequest.error = String(response.error);
         }
     }
 </script>
