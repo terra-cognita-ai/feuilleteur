@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		
+		<link href="./_app/immutable/assets/0.DOe9qGvR.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.nXcrlN-G.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.DWHRybaA.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/entry.Dyek_fQs.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.xWvB5Pfl.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.CRVecDl-.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.BNVms-Pv.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.BDgMHFCp.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.DgGvxORf.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">  <header class="container" data-svelte-h="svelte-1nkwsot"><hgroup><h1>Feuilleteur</h1> <p>Ask your book questions, stay spoiler-free.</p></hgroup></header> <main class="container"> <section id="search-form"><article><h4 data-svelte-h="svelte-16fk5mr">Search Public Domain Books</h4> <hr> <form><input type="search" name="search" placeholder="Search Book" aria-label="Search" value=""> <button aria-busy="false" class="full-width svelte-t0qkv2">Search</button></form> <div class="grid overflow-auto svelte-t0qkv2"></div> </article> </section> <section id="upload-form"><article><h4 data-svelte-h="svelte-tnb7qc">Import Epub Files</h4> <hr>  <span aria-busy="true" data-svelte-h="svelte-r6f49d">Checking server status...</span>  </article> </section></main> 
+			
+			<script>
+				{
+					__sveltekit_un8pw1 = {
+						base: new URL(".", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("./_app/immutable/entry/start.DWHRybaA.js"),
+						import("./_app/immutable/entry/app.CRVecDl-.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>

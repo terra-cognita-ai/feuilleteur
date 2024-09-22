@@ -1,93 +1,108 @@
 import os
-
 from loguru import logger
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from langchain.schema import AIMessage
+from typing import List
 
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from langchain.schema import AIMessage
+from urllib.request import urlretrieve
 from werkzeug.utils import secure_filename
+
 from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
-from backend.src.vectordb import get_sorted_db, get_books_list, clear_vector_db
 from backend.src.parsing import extract_cover_image
+from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
 
 UPLOAD_FOLDER = 'data/session'
 VECTORS_FOLDER = 'data/vectors'
-UPLOADED_FILE_NAME = 'uploaded_book.epub'
 ALLOWED_EXTENSIONS = {'epub'}
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['VECTORS_FOLDER'] = VECTORS_FOLDER
-CORS(app)
+app = FastAPI()
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.post("/upload-file")
+async def upload_file(file: UploadFile = File(...)):
+    if file.filename == "":
+        raise HTTPException(status_code=400, detail="No selected file")
 
-@app.route('/', defaults=dict(filename=None))
-@app.route('/<path:filename>', methods=['GET', 'POST'])
-def index(filename):
-    filename = filename or 'index.html'
-    if request.method == 'GET':
-        return send_from_directory('../frontend', filename)
+    if "." not in file.filename or file.filename.rsplit(".", 1)[1].lower() not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    try:
+        percentage = 100
 
-    return jsonify(request.data)
+        # Save uploaded file
+        file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
 
-@app.route('/status', methods=['GET'])
-def get_status():
-    return {"message": "The API is up and running."}
-
-@app.route('/upload-file', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-
-        # Get the percentage from the request
-        percentage = int(request.form.get('percentage', 100))
-
-        # Process and vectorize the EPUB file
         logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
         result = load_and_process_epub(file_path, percentage=percentage)
+
         splits = split_documents_with_positions(result)
         vectorize_documents(splits)
 
-        # Extract cover image
-        cover_image_path = extract_cover_image(file_path, app.config['UPLOAD_FOLDER'])
-        if cover_image_path:
-            cover_image_url = f"/cover-image/{os.path.basename(cover_image_path)}"
-        else:
-            cover_image_url = None
+        cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
+        return JSONResponse({"message": f"File uploaded and processed successfully ({percentage}% of the book).", 
+                           "cover_image_url": f"/cover-image/{os.path.basename(cover_image_path)}" if cover_image_path else None})
 
-        return jsonify({"message": f"File uploaded and processed successfully ({percentage}% of the book).", "cover_image_url": cover_image_url}), 200
+    except Exception as e:
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail=str(e))
+    
+class Book(BaseModel):
+    title: str
+    formats: dict[str, str]
+
+@app.post("/import-book")
+async def import_book(book: Book):
+    title = book.title
+    formats = book.formats
+
+    if not title:
+        raise HTTPException(status_code=400, detail="No title")
+    url = formats.get("application/epub+zip")
+
+    if url:
+        try:
+            file_path = os.path.join(UPLOAD_FOLDER, secure_filename(title + '.epub'))
+            urlretrieve(url, file_path)
+
+            result = load_and_process_epub(file_path, percentage=100)
+            splits = split_documents_with_positions(result)
+            vectorize_documents(splits)
+
+            cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
+            return JSONResponse({"message": f"File uploaded and processed successfully ({100}% of the book).",
+                                "cover_image_url": f"/cover-image/{os.path.basename(cover_image_path)}" if cover_image_path else None})
+
+        except Exception as e:
+            logger.exception(e)
+            raise HTTPException(status_code=500, detail=str(e))
+
     else:
-        return jsonify({"error": "File type not allowed"}), 400
+        raise HTTPException(status_code=400, detail="No epub URL") 
 
-@app.route('/cover-image/<filename>', methods=['GET'])
-def serve_cover_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+@app.get("/cover-image/{filename}")
+async def serve_cover_image(filename: str):
+  return JSONResponse({"file": filename})
 
-@app.route('/ask-question', methods=['POST'])
-def ask_question():
-    if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], UPLOADED_FILE_NAME)):
-        return jsonify({"error": "No file uploaded yet."}), 400
+class Question(BaseModel):
+    question: str
+    book: str
+    percentage: int = 100
 
-    question = request.json.get('question', '')
-    book = request.json.get('book', '')
-    percentage = int(request.json.get('percentage', ''))
+class Document(BaseModel):
+    content: str
+    position: str        
 
-    if not question:
-        return jsonify({"error": "Question is required"}), 400
+class Answer(BaseModel):
+    answer: str
+    documents: list[Document]
 
+@app.post("/ask-question")
+async def ask_question(question: Question) -> Answer:
     try:
-        answer, docs = answer_question(question, book, percentage)
+        answer, docs = answer_question(question.question, question.book, question.percentage)
 
         # Convert AIMessage to string if needed
         if isinstance(answer, AIMessage):
@@ -96,29 +111,31 @@ def ask_question():
             answer_content = str(answer)
 
         docs = [{"content": doc["content"], "position": doc["position"]} for doc in docs]
-
         logger.info(f"Answer:\n{answer_content}")
 
-        return jsonify({"answer": answer_content, "documents": docs})
+        return {"answer": answer_content, "documents": docs}
+
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {e}"}), 500
+        return {"error": f"An error occurred: {e}"}
 
-@app.route('/chroma', methods=['GET'])
-def get_db():
-    book = request.json.get('book', '')
-    return {"chroma": get_sorted_db(book)}
+@app.get("/chroma")
+async def get_db(book: Book):
+    return {"chroma": get_sorted_db(book.title)}
 
-@app.route('/cleardb', methods=['GET'])
-def clear_db():
+@app.delete("/clear_db")
+async def clear_db():
     return {"cleardb": clear_vector_db()}
 
-@app.route('/books', methods=['GET'])
-def get_books():
-    return {"books": get_books_list()}
+@app.get("/books")
+async def get_books() -> list[str]:
+    return get_books_list()
 
-if __name__ == "__main__":
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
-    if not os.path.exists(VECTORS_FOLDER):
-        os.makedirs(VECTORS_FOLDER)
-    app.run(host='0.0.0.0', port=8890, debug=True)
+@app.get("/status")
+async def get_status():
+    return {
+        "message": "The API is up and running.",
+        "status": "OK"
+    }
+
+# Serve static files from frontend build directory
+app.mount("", StaticFiles(directory="frontend/build", html = True), name="frontend")
