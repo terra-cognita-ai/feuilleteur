@@ -2,7 +2,7 @@ import os
 from loguru import logger
 from typing import List
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ ALLOWED_EXTENSIONS = {'epub'}
 app = FastAPI()
 
 @app.post("/upload-file")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...)) -> Response:
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No selected file")
 
@@ -54,7 +54,7 @@ class Book(BaseModel):
     formats: dict[str, str]
 
 @app.post("/import-book")
-async def import_book(book: Book):
+async def import_book(book: Book) -> Response:
     title = book.title
     formats = book.formats
 
@@ -83,7 +83,7 @@ async def import_book(book: Book):
         raise HTTPException(status_code=400, detail="No epub URL") 
 
 @app.get("/cover-image/{filename}")
-async def serve_cover_image(filename: str):
+async def serve_cover_image(filename: str) -> Response:
   return JSONResponse({"file": filename})
 
 class Question(BaseModel):
@@ -119,11 +119,11 @@ async def ask_question(question: Question) -> Answer:
         return {"error": f"An error occurred: {e}"}
 
 @app.get("/chroma")
-async def get_db(book: Book):
+async def get_db(book: Book) -> Response:
     return {"chroma": get_sorted_db(book.title)}
 
 @app.delete("/clear_db")
-async def clear_db():
+async def clear_db() -> Response:
     return {"cleardb": clear_vector_db()}
 
 @app.get("/books")
@@ -131,7 +131,7 @@ async def get_books() -> list[str]:
     return get_books_list()
 
 @app.get("/status")
-async def get_status():
+async def get_status() -> Response:
     return {
         "message": "The API is up and running.",
         "status": "OK"
