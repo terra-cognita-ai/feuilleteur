@@ -34,7 +34,7 @@
                 question.answer.status = "ok";
             }
             else {
-                question.answer.error = String(response.error);
+                question.answer.error = JSON.stringify(response.error);
                 question.answer.status = "error";
             }
 
