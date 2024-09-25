@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, FilePath, FileUrl
+from pydantic import BaseModel, Field, FilePath, FileUrl, HttpUrl
 from typing_extensions import TypedDict
 from typing import Optional
 import uuid
@@ -11,8 +11,8 @@ class Person(BaseModel):
     death_year: Optional[int] = None
 
 BookFormats = TypedDict("BookFormats",{
-    "application/epub+zip": FileUrl,
-    "image/jpeg": FileUrl
+    "application/epub+zip": HttpUrl,
+    "image/jpeg": HttpUrl
 })
 
 class BookImportRequest(BaseModel):

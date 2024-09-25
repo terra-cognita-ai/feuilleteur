@@ -4,6 +4,29 @@ from pydantic import BaseModel, Field
 from langchain_core.documents.base import Document
 from langchain_unstructured import UnstructuredLoader
 from langchain_community.document_loaders.epub import UnstructuredEPubLoader
+from typing import Union
+from backend.src.rag import split_documents_with_positions, vectorize_documents
+from urllib.request import urlretrieve
+import os
+
+def download_file(url: str, file_path: str):
+    return urlretrieve(url, file_path)
+
+def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage: int = 100):
+    """Load and process the EPUB file."""
+    logger.info("Loading document...")
+    config = EPUBProcessingConfig(
+        file_path=file_path,
+        percentage=percentage
+    )
+    epub_chain = EPUBPartialLoader(config)
+    result = epub_chain({"input": None})
+
+    logger.info(f"Selected Text (up to {config.percentage}% of the content):")
+
+    splits = split_documents_with_positions(result)
+    vectorize_documents(splits)
+    return result
 
 class EPUBProcessingConfig(BaseModel):
     file_path: str

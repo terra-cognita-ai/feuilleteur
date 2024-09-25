@@ -1,15 +1,14 @@
 import os
 from loguru import logger
-from typing import List
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from langchain.schema import AIMessage
-from urllib.request import urlretrieve
 from werkzeug.utils import secure_filename
 
-from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
+from backend.src.loading import load_and_process_epub, download_file
+from backend.src.rag import answer_question
 from backend.src.parsing import extract_cover_image
 from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
 from backend.src.types import BookImportRequest, Question, Answer, ImportedBook
@@ -36,10 +35,7 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
             f.write(await file.read())
 
         logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
-        result = load_and_process_epub(file_path, percentage=percentage)
-
-        splits = split_documents_with_positions(result)
-        vectorize_documents(splits)
+        load_and_process_epub(file_path, percentage=percentage)
 
         cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
         return JSONResponse({"message": f"File uploaded and processed successfully ({percentage}% of the book).", 
@@ -52,21 +48,15 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
 @app.post("/import-book")
 async def import_book(book: BookImportRequest) -> Response:
     title = book.title
-    formats = book.formats
-
     if not title:
         raise HTTPException(status_code=400, detail="No title")
-    url = formats.get("application/epub+zip")
-
+    
+    url = book.formats["application/epub+zip"]
     if url:
         try:
             file_path = os.path.join(UPLOAD_FOLDER, secure_filename(title + '.epub'))
-            urlretrieve(url, file_path)
-
-            result = load_and_process_epub(file_path, percentage=100)
-            splits = split_documents_with_positions(result)
-            vectorize_documents(splits)
-
+            path = download_file(url.unicode_string(), file_path)[0]
+            load_and_process_epub(path)
             cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
             return JSONResponse({"message": f"File uploaded and processed successfully ({100}% of the book).",
                                 "cover_image_url": f"/cover-image/{os.path.basename(cover_image_path)}" if cover_image_path else None})

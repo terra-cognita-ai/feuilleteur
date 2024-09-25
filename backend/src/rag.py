@@ -1,4 +1,3 @@
-import os
 from typing import Union, Tuple, List
 
 from dotenv import load_dotenv, find_dotenv
@@ -9,7 +8,6 @@ from langchain_ollama import ChatOllama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 
-from backend.src.loading import EPUBPartialLoader, EPUBProcessingConfig
 from backend.src.output import format_docs
 from backend.config.config import MODEL
 from backend.config.config import PROVIDER
@@ -38,19 +36,6 @@ def get_llm():
         )
     else:
         raise ValueError(f"Invalid provider {PROVIDER}")
-
-def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage: int):
-    """Load and process the EPUB file."""
-    logger.info("Loading document...")
-    config = EPUBProcessingConfig(
-        file_path=file_path,
-        percentage=percentage
-    )
-    epub_chain = EPUBPartialLoader(config)
-    result = epub_chain({"input": None})
-
-    logger.info(f"Selected Text (up to {config.percentage}% of the content):")
-    return result
 
 def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200):
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
