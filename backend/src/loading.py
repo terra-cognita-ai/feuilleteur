@@ -6,6 +6,7 @@ from langchain_unstructured import UnstructuredLoader
 from langchain_community.document_loaders.epub import UnstructuredEPubLoader
 from typing import Union
 from backend.src.rag import split_documents_with_positions, vectorize_documents
+from backend.src.parsing import extract_cover_image
 from urllib.request import urlretrieve
 import os
 
@@ -26,6 +27,7 @@ def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage:
 
     splits = split_documents_with_positions(result)
     vectorize_documents(splits)
+    extract_cover_image(file_path)
     return result
 
 class EPUBProcessingConfig(BaseModel):

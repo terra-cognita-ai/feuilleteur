@@ -9,7 +9,6 @@ from werkzeug.utils import secure_filename
 
 from backend.src.loading import load_and_process_epub, download_file
 from backend.src.rag import answer_question
-from backend.src.parsing import extract_cover_image
 from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
 from backend.src.types import BookImportRequest, Question, Answer, ImportedBook
 
@@ -27,20 +26,15 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
     if "." not in file.filename or file.filename.rsplit(".", 1)[1].lower() not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="File type not allowed")
     try:
-        percentage = 100
-
         # Save uploaded file
         file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
         with open(file_path, "wb") as f:
             f.write(await file.read())
 
-        logger.info(f"Processing EPUB for vectorization with {percentage}% of the content...")
-        load_and_process_epub(file_path, percentage=percentage)
+        logger.info(f"Processing EPUB for vectorization...")
+        load_and_process_epub(file_path)
 
-        cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
-        return JSONResponse({"message": f"File uploaded and processed successfully ({percentage}% of the book).", 
-                           "cover_image_url": f"/cover-image/{os.path.basename(cover_image_path)}" if cover_image_path else None})
-
+        return {"message": f"File uploaded and processed successfully."}
     except Exception as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -57,14 +51,10 @@ async def import_book(book: BookImportRequest) -> Response:
             file_path = os.path.join(UPLOAD_FOLDER, secure_filename(title + '.epub'))
             path = download_file(url.unicode_string(), file_path)[0]
             load_and_process_epub(path)
-            cover_image_path = extract_cover_image(file_path, UPLOAD_FOLDER)
-            return JSONResponse({"message": f"File uploaded and processed successfully ({100}% of the book).",
-                                "cover_image_url": f"/cover-image/{os.path.basename(cover_image_path)}" if cover_image_path else None})
-
+            return {"message": f"File downloaded and processed successfully."}
         except Exception as e:
             logger.exception(e)
             raise HTTPException(status_code=500, detail=str(e))
-
     else:
         raise HTTPException(status_code=400, detail="No epub URL") 
 
