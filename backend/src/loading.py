@@ -7,11 +7,31 @@ from langchain_community.document_loaders.epub import UnstructuredEPubLoader
 from typing import Union
 from backend.src.rag import split_documents_with_positions, vectorize_documents
 from backend.src.parsing import extract_cover_image
+from backend.src.types import BookImportRequest
 from urllib.request import urlretrieve
+from werkzeug.utils import secure_filename
+from fastapi import UploadFile
 import os
+
+UPLOAD_FOLDER = 'data/session'
 
 def download_file(url: str, file_path: str):
     return urlretrieve(url, file_path)
+
+def download_and_process_epub(book: BookImportRequest):
+    """Download and process the EPUB file."""
+    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(book.title + ".epub"))
+    url = book.formats["application/epub+zip"].unicode_string()
+    logger.info("Downloading EPUB from URL: {}".format(url))
+    path, _ = download_file(url, file_path)
+    return load_and_process_epub(path)
+
+async def save_and_process_epub(file: UploadFile):
+    """Save and process the EPUB file."""
+    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+    return load_and_process_epub(file_path)
 
 def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage: int = 100):
     """Load and process the EPUB file."""

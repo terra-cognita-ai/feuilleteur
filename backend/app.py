@@ -1,19 +1,16 @@
-import os
 from loguru import logger
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Response
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from langchain.schema import AIMessage
-from werkzeug.utils import secure_filename
 
-from backend.src.loading import load_and_process_epub, download_file
-from backend.src.rag import answer_question
-from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
 from backend.src.types import BookImportRequest, Question, Answer, ImportedBook
 
+from backend.src.loading import save_and_process_epub, download_and_process_epub
+from backend.src.rag import answer_question
+from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
+
 UPLOAD_FOLDER = 'data/session'
-VECTORS_FOLDER = 'data/vectors'
 ALLOWED_EXTENSIONS = {'epub'}
 
 app = FastAPI()
@@ -22,18 +19,11 @@ app = FastAPI()
 async def upload_file(file: UploadFile = File(...)) -> Response:
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No selected file")
-
     if "." not in file.filename or file.filename.rsplit(".", 1)[1].lower() not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="File type not allowed")
     try:
-        # Save uploaded file
-        file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-        with open(file_path, "wb") as f:
-            f.write(await file.read())
-
         logger.info(f"Processing EPUB for vectorization...")
-        load_and_process_epub(file_path)
-
+        await save_and_process_epub(file)
         return {"message": f"File uploaded and processed successfully."}
     except Exception as e:
         logger.exception(e)
@@ -41,26 +31,16 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
 
 @app.post("/import-book")
 async def import_book(book: BookImportRequest) -> Response:
-    title = book.title
-    if not title:
-        raise HTTPException(status_code=400, detail="No title")
-    
-    url = book.formats["application/epub+zip"]
-    if url:
-        try:
-            file_path = os.path.join(UPLOAD_FOLDER, secure_filename(title + '.epub'))
-            path = download_file(url.unicode_string(), file_path)[0]
-            load_and_process_epub(path)
-            return {"message": f"File downloaded and processed successfully."}
-        except Exception as e:
-            logger.exception(e)
-            raise HTTPException(status_code=500, detail=str(e))
-    else:
-        raise HTTPException(status_code=400, detail="No epub URL") 
+    try:
+        download_and_process_epub(book)
+        return {"message": f"File downloaded and processed successfully."}
+    except Exception as e:
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/cover-image/{filename}")
 async def serve_cover_image(filename: str) -> Response:
-  return JSONResponse({"file": filename})
+  return {"file": filename}
 
 @app.post("/ask-question")
 async def ask_question(question: Question) -> Answer:
