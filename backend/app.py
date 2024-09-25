@@ -3,9 +3,8 @@ from loguru import logger
 from typing import List
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 from langchain.schema import AIMessage
 from urllib.request import urlretrieve
 from werkzeug.utils import secure_filename
@@ -13,6 +12,7 @@ from werkzeug.utils import secure_filename
 from backend.src.rag import load_and_process_epub, split_documents_with_positions, vectorize_documents, answer_question
 from backend.src.parsing import extract_cover_image
 from backend.src.vectordb import get_sorted_db, clear_vector_db, get_books_list
+from backend.src.types import BookImportRequest, Question, Answer, ImportedBook
 
 UPLOAD_FOLDER = 'data/session'
 VECTORS_FOLDER = 'data/vectors'
@@ -48,13 +48,9 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
     except Exception as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
-    
-class Book(BaseModel):
-    title: str
-    formats: dict[str, str]
 
 @app.post("/import-book")
-async def import_book(book: Book) -> Response:
+async def import_book(book: BookImportRequest) -> Response:
     title = book.title
     formats = book.formats
 
@@ -86,21 +82,9 @@ async def import_book(book: Book) -> Response:
 async def serve_cover_image(filename: str) -> Response:
   return JSONResponse({"file": filename})
 
-class Question(BaseModel):
-    question: str
-    book: str
-    percentage: int = 100
-
-class Document(BaseModel):
-    content: str
-    position: str        
-
-class Answer(BaseModel):
-    answer: str
-    documents: list[Document]
-
 @app.post("/ask-question")
 async def ask_question(question: Question) -> Answer:
+    logger.info(question)
     try:
         answer, docs = answer_question(question.question, question.book, question.percentage)
 
@@ -119,7 +103,7 @@ async def ask_question(question: Question) -> Answer:
         return {"error": f"An error occurred: {e}"}
 
 @app.get("/chroma")
-async def get_db(book: Book) -> Response:
+async def get_db(book: ImportedBook) -> Response:
     return {"chroma": get_sorted_db(book.title)}
 
 @app.delete("/clear_db")

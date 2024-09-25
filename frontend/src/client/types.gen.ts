@@ -9,11 +9,19 @@ export type Body_upload_file_upload_file_post = {
     file: (Blob | File);
 };
 
-export type Book = {
+export type BookFormats = {
+    'application/epub+zip': string;
+    'image/jpeg': string;
+};
+
+export type BookImportRequest = {
     title: string;
-    formats: {
-        [key: string]: (string);
-    };
+    formats: BookFormats;
+    authors?: Array<Person>;
+    translators?: Array<Person>;
+    languages?: Array<(string)>;
+    subjects?: (Array<(string)> | null);
+    gutenberg_id?: (number | null);
 };
 
 export type Document = {
@@ -23,6 +31,25 @@ export type Document = {
 
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
+};
+
+export type ImportedBook = {
+    title: string;
+    formats: BookFormats;
+    authors?: Array<Person>;
+    translators?: Array<Person>;
+    languages?: Array<(string)>;
+    subjects?: (Array<(string)> | null);
+    gutenberg_id?: (number | null);
+    epub_path?: (string | null);
+    cover_path?: (string | null);
+    uuid?: (string | null);
+};
+
+export type Person = {
+    name: string;
+    birth_year?: (number | null);
+    death_year?: (number | null);
 };
 
 export type Question = {
@@ -46,7 +73,7 @@ export type PostUploadFileResponse = (unknown);
 export type PostUploadFileError = (HTTPValidationError);
 
 export type PostImportBookData = {
-    body: Book;
+    body: BookImportRequest;
 };
 
 export type PostImportBookResponse = (unknown);
@@ -72,7 +99,7 @@ export type PostAskQuestionResponse = (Answer);
 export type PostAskQuestionError = (HTTPValidationError);
 
 export type GetChromaData = {
-    body: Book;
+    body: ImportedBook;
 };
 
 export type GetChromaResponse = (unknown);
