@@ -4,6 +4,6 @@
 
 {#if message}
 <mark>
-    {message}
+    {message.replaceAll("\\n", " ")}
 </mark>
 {/if}

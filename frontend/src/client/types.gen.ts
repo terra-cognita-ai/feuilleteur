@@ -14,14 +14,13 @@ export type BookFormats = {
     'image/jpeg': string;
 };
 
-export type BookImportRequest = {
+export type BookMetadata = {
     title: string;
-    formats: BookFormats;
-    authors?: Array<Person>;
-    translators?: Array<Person>;
-    languages?: Array<(string)>;
-    subjects?: (Array<(string)> | null);
-    gutenberg_id?: (number | null);
+    uuid: string;
+    authors: string;
+    translators: string;
+    languages: string;
+    cover_url?: string;
 };
 
 export type Document = {
@@ -29,21 +28,18 @@ export type Document = {
     position: string;
 };
 
-export type HTTPValidationError = {
-    detail?: Array<ValidationError>;
-};
-
-export type ImportedBook = {
+export type GutenbergBook = {
     title: string;
+    id: number;
     formats: BookFormats;
     authors?: Array<Person>;
     translators?: Array<Person>;
     languages?: Array<(string)>;
-    subjects?: (Array<(string)> | null);
-    gutenberg_id?: (number | null);
-    epub_path?: (string | null);
-    cover_path?: (string | null);
-    uuid?: (string | null);
+    subjects?: Array<(string)>;
+};
+
+export type HTTPValidationError = {
+    detail?: Array<ValidationError>;
 };
 
 export type Person = {
@@ -73,22 +69,12 @@ export type PostUploadFileResponse = (unknown);
 export type PostUploadFileError = (HTTPValidationError);
 
 export type PostImportBookData = {
-    body: BookImportRequest;
+    body: GutenbergBook;
 };
 
 export type PostImportBookResponse = (unknown);
 
 export type PostImportBookError = (HTTPValidationError);
-
-export type GetCoverImageByFilenameData = {
-    path: {
-        filename: string;
-    };
-};
-
-export type GetCoverImageByFilenameResponse = (unknown);
-
-export type GetCoverImageByFilenameError = (HTTPValidationError);
 
 export type PostAskQuestionData = {
     body: Question;
@@ -99,7 +85,7 @@ export type PostAskQuestionResponse = (Answer);
 export type PostAskQuestionError = (HTTPValidationError);
 
 export type GetChromaData = {
-    body: ImportedBook;
+    body: BookMetadata;
 };
 
 export type GetChromaResponse = (unknown);
@@ -110,7 +96,7 @@ export type DeleteClearDbResponse = (unknown);
 
 export type DeleteClearDbError = unknown;
 
-export type GetBooksResponse = (Array<(string)>);
+export type GetBooksResponse = (Array<BookMetadata>);
 
 export type GetBooksError = unknown;
 

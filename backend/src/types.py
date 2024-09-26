@@ -1,9 +1,8 @@
-from pydantic import BaseModel, Field, FilePath, FileUrl, HttpUrl
+from pydantic import BaseModel, Field, FilePath, FileUrl, HttpUrl, model_validator
+from pydantic.functional_validators import AfterValidator
 from typing_extensions import TypedDict
 from typing import Optional
 import uuid
-
-UUID = uuid.UUID
 
 class Person(BaseModel):
     name: str
@@ -11,25 +10,30 @@ class Person(BaseModel):
     death_year: Optional[int] = None
 
 BookFormats = TypedDict("BookFormats",{
-    "application/epub+zip": HttpUrl,
-    "image/jpeg": HttpUrl
+    "application/epub+zip": str,
+    "image/jpeg": str
 })
 
-class BookImportRequest(BaseModel):
+class BookMetadataBase(BaseModel):
     title: str
+
+class GutenbergBook(BookMetadataBase):
+    id: int
     formats: BookFormats
     authors: list[Person] = []
     translators: list[Person] = []
     languages: list[str] = []
-    subjects: Optional[list[str]] = None
-    gutenberg_id: Optional[int] = None
+    subjects: list[str] = []
     
-class BookMetadata(BookImportRequest):
-    epub_path: Optional[FilePath] = None
-    cover_path: Optional[FilePath] = None
+class BookMetadata(BookMetadataBase):
+    uuid: str
+    authors: str
+    translators: str
+    languages: str
+    cover_url: str = ""
 
-class ImportedBook(BookMetadata):
-    uuid: Optional[UUID] = None
+class BookReference(BaseModel):
+    uuid: str
 
 class Question(BaseModel):
     question: str

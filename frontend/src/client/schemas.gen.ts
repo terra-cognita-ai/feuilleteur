@@ -36,14 +36,10 @@ export const BookFormatsSchema = {
     properties: {
         'application/epub+zip': {
             type: 'string',
-            minLength: 1,
-            format: 'uri',
             title: 'Application/Epub+Zip'
         },
         'image/jpeg': {
             type: 'string',
-            minLength: 1,
-            format: 'uri',
             title: 'Image/Jpeg'
         }
     },
@@ -52,68 +48,37 @@ export const BookFormatsSchema = {
     title: 'BookFormats'
 } as const;
 
-export const BookImportRequestSchema = {
+export const BookMetadataSchema = {
     properties: {
         title: {
             type: 'string',
             title: 'Title'
         },
-        formats: {
-            '$ref': '#/components/schemas/BookFormats'
+        uuid: {
+            type: 'string',
+            title: 'Uuid'
         },
         authors: {
-            items: {
-                '$ref': '#/components/schemas/Person'
-            },
-            type: 'array',
-            title: 'Authors',
-            default: []
+            type: 'string',
+            title: 'Authors'
         },
         translators: {
-            items: {
-                '$ref': '#/components/schemas/Person'
-            },
-            type: 'array',
-            title: 'Translators',
-            default: []
+            type: 'string',
+            title: 'Translators'
         },
         languages: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Languages',
-            default: []
+            type: 'string',
+            title: 'Languages'
         },
-        subjects: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Subjects'
-        },
-        gutenberg_id: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Gutenberg Id'
+        cover_url: {
+            type: 'string',
+            title: 'Cover Url',
+            default: ''
         }
     },
     type: 'object',
-    required: ['title', 'formats'],
-    title: 'BookImportRequest'
+    required: ['title', 'uuid', 'authors', 'translators', 'languages'],
+    title: 'BookMetadata'
 } as const;
 
 export const DocumentSchema = {
@@ -132,25 +97,15 @@ export const DocumentSchema = {
     title: 'Document'
 } as const;
 
-export const HTTPValidationErrorSchema = {
-    properties: {
-        detail: {
-            items: {
-                '$ref': '#/components/schemas/ValidationError'
-            },
-            type: 'array',
-            title: 'Detail'
-        }
-    },
-    type: 'object',
-    title: 'HTTPValidationError'
-} as const;
-
-export const ImportedBookSchema = {
+export const GutenbergBookSchema = {
     properties: {
         title: {
             type: 'string',
             title: 'Title'
+        },
+        id: {
+            type: 'integer',
+            title: 'Id'
         },
         formats: {
             '$ref': '#/components/schemas/BookFormats'
@@ -180,70 +135,31 @@ export const ImportedBookSchema = {
             default: []
         },
         subjects: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Subjects'
-        },
-        gutenberg_id: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Gutenberg Id'
-        },
-        epub_path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Epub Path'
-        },
-        cover_path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Cover Path'
-        },
-        uuid: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Uuid'
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Subjects',
+            default: []
         }
     },
     type: 'object',
-    required: ['title', 'formats'],
-    title: 'ImportedBook'
+    required: ['title', 'id', 'formats'],
+    title: 'GutenbergBook'
+} as const;
+
+export const HTTPValidationErrorSchema = {
+    properties: {
+        detail: {
+            items: {
+                '$ref': '#/components/schemas/ValidationError'
+            },
+            type: 'array',
+            title: 'Detail'
+        }
+    },
+    type: 'object',
+    title: 'HTTPValidationError'
 } as const;
 
 export const PersonSchema = {

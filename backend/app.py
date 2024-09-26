@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from langchain.schema import AIMessage
 
-from backend.src.types import BookImportRequest, Question, Answer, ImportedBook
+from backend.src.types import GutenbergBook, BookMetadata, Question, Answer
 
 from backend.src.loading import save_and_process_epub, download_and_process_epub
 from backend.src.rag import answer_question
@@ -30,17 +30,13 @@ async def upload_file(file: UploadFile = File(...)) -> Response:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/import-book")
-async def import_book(book: BookImportRequest) -> Response:
+async def import_book(book: GutenbergBook) -> Response:
     try:
         download_and_process_epub(book)
         return {"message": f"File downloaded and processed successfully."}
     except Exception as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/cover-image/{filename}")
-async def serve_cover_image(filename: str) -> Response:
-  return {"file": filename}
 
 @app.post("/ask-question")
 async def ask_question(question: Question) -> Answer:
@@ -63,7 +59,7 @@ async def ask_question(question: Question) -> Answer:
         return {"error": f"An error occurred: {e}"}
 
 @app.get("/chroma")
-async def get_db(book: ImportedBook) -> Response:
+async def get_db(book: BookMetadata) -> Response:
     return {"chroma": get_sorted_db(book.title)}
 
 @app.delete("/clear_db")
@@ -71,7 +67,8 @@ async def clear_db() -> Response:
     return {"cleardb": clear_vector_db()}
 
 @app.get("/books")
-async def get_books() -> list[str]:
+async def get_books() -> list[BookMetadata]:
+    logger.info(get_books_list())
     return get_books_list()
 
 @app.get("/status")
@@ -80,6 +77,9 @@ async def get_status() -> Response:
         "message": "The API is up and running.",
         "status": "OK"
     }
+
+# Serve static files from frontend build directory
+app.mount("/cover", StaticFiles(directory="data/session"), name="covers")
 
 # Serve static files from frontend build directory
 app.mount("", StaticFiles(directory="frontend/build", html = True), name="frontend")
