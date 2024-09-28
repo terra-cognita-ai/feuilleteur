@@ -9,11 +9,18 @@ export type Body_upload_file_upload_file_post = {
     file: (Blob | File);
 };
 
-export type Book = {
+export type BookFormats = {
+    'application/epub+zip': string;
+    'image/jpeg': string;
+};
+
+export type BookMetadata = {
     title: string;
-    formats: {
-        [key: string]: (string);
-    };
+    uuid: string;
+    authors: string;
+    translators: string;
+    languages: string;
+    cover_url?: string;
 };
 
 export type Document = {
@@ -21,8 +28,24 @@ export type Document = {
     position: string;
 };
 
+export type GutenbergBook = {
+    title: string;
+    id: number;
+    formats: BookFormats;
+    authors?: Array<Person>;
+    translators?: Array<Person>;
+    languages?: Array<(string)>;
+    subjects?: Array<(string)>;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
+};
+
+export type Person = {
+    name: string;
+    birth_year?: (number | null);
+    death_year?: (number | null);
 };
 
 export type Question = {
@@ -46,22 +69,12 @@ export type PostUploadFileResponse = (unknown);
 export type PostUploadFileError = (HTTPValidationError);
 
 export type PostImportBookData = {
-    body: Book;
+    body: GutenbergBook;
 };
 
 export type PostImportBookResponse = (unknown);
 
 export type PostImportBookError = (HTTPValidationError);
-
-export type GetCoverImageByFilenameData = {
-    path: {
-        filename: string;
-    };
-};
-
-export type GetCoverImageByFilenameResponse = (unknown);
-
-export type GetCoverImageByFilenameError = (HTTPValidationError);
 
 export type PostAskQuestionData = {
     body: Question;
@@ -72,7 +85,7 @@ export type PostAskQuestionResponse = (Answer);
 export type PostAskQuestionError = (HTTPValidationError);
 
 export type GetChromaData = {
-    body: Book;
+    body: BookMetadata;
 };
 
 export type GetChromaResponse = (unknown);
@@ -83,7 +96,7 @@ export type DeleteClearDbResponse = (unknown);
 
 export type DeleteClearDbError = unknown;
 
-export type GetBooksResponse = (Array<(string)>);
+export type GetBooksResponse = (Array<BookMetadata>);
 
 export type GetBooksError = unknown;
 

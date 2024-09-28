@@ -1,4 +1,3 @@
-import os
 from typing import Union, Tuple, List
 
 from dotenv import load_dotenv, find_dotenv
@@ -9,18 +8,12 @@ from langchain_ollama import ChatOllama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 
-from backend.src.loading import EPUBPartialLoader, EPUBProcessingConfig
 from backend.src.output import format_docs
 from backend.config.config import MODEL
 from backend.config.config import PROVIDER
 from backend.config.config import HOST
 from backend.src.prompts import basis_prompt, basis_prompt_2
-from backend.src.vectordb import get_vector_db, clear_book
-from pypandoc.pandoc_download import download_pandoc
-
-# see the documentation how to customize the installation path
-# but be aware that you then need to include it in the `PATH`
-download_pandoc()
+from backend.src.vectordb import get_vector_db
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -39,19 +32,6 @@ def get_llm():
     else:
         raise ValueError(f"Invalid provider {PROVIDER}")
 
-def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], percentage: int):
-    """Load and process the EPUB file."""
-    logger.info("Loading document...")
-    config = EPUBProcessingConfig(
-        file_path=file_path,
-        percentage=percentage
-    )
-    epub_chain = EPUBPartialLoader(config)
-    result = epub_chain({"input": None})
-
-    logger.info(f"Selected Text (up to {config.percentage}% of the content):")
-    return result
-
 def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200):
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     total_length = sum([len(doc.page_content) for doc in documents])
@@ -64,25 +44,20 @@ def split_documents_with_positions(documents, chunk_size=2000, chunk_overlap=200
             end_position = start_position + len(split)
             percentage_start = (start_position / total_length) * 100
             percentage_end = (end_position / total_length) * 100
+            percentage_mid = (percentage_end + percentage_start) / 2
 
             current_position += len(split) if i == 0 else (chunk_size - chunk_overlap)
             split_documents.append(Document(
                 page_content=split,
                 metadata={
                     "start_percentage": percentage_start,
+                    "mid_percentage": percentage_mid,
                     "end_percentage": percentage_end,
                     "source": document.metadata.get("source_doc_0", "unknown")
                 }
             ))
 
     return split_documents
-
-def vectorize_documents(splits: List[Document]):
-    """Vectorize the document splits and save them for later retrieval."""
-    logger.info("Vectorizing documents...")
-    source = splits[0].metadata["source"].replace("data/session/", "").replace(".epub", "")
-    clear_book(source)
-    get_vector_db(source).add_documents(splits)
 
 def build_rag_chain(source: str, percentage: int):
     """Build the RAG chain for retrieving and answering questions."""

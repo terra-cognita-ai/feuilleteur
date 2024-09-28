@@ -4,6 +4,73 @@ from pydantic import BaseModel, Field
 from langchain_core.documents.base import Document
 from langchain_unstructured import UnstructuredLoader
 from langchain_community.document_loaders.epub import UnstructuredEPubLoader
+from typing import Union
+from backend.src.rag import split_documents_with_positions
+from backend.src.vectordb import vectorize_documents
+from backend.src.parsing import extract_cover_image
+from backend.src.types import GutenbergBook, BookMetadata
+from urllib.request import urlretrieve
+from werkzeug.utils import secure_filename
+from fastapi import UploadFile
+import os, uuid
+
+UPLOAD_FOLDER = 'data/session'
+
+def generate_unique_id(book: BookMetadata):
+    authors = list(map(lambda a : a.name, book.authors))
+    translators = list(map(lambda t : t.name, book.translators))
+    unique_string = " ".join([book.title] + authors + translators + book.languages).lower()
+    unique_string = ''.join(letter for letter in unique_string if letter.isalnum())
+    logger.info(unique_string)
+    return uuid.uuid5(uuid.NAMESPACE_OID, unique_string).hex
+
+def make_book_metadata(book: GutenbergBook) -> BookMetadata:
+    return BookMetadata(
+        title = book.title,
+        uuid = generate_unique_id(book), 
+        authors = "&".join([author.name for author in book.authors]), 
+        translators =  "&".join([translator.name for translator in book.translators]),
+        languages =  "&".join([language for language in book.languages]),
+        cover_url = book.formats["image/jpeg"]
+    )
+
+def download_file(url: str, file_path: str):
+    return urlretrieve(url, file_path)
+
+def download_and_process_epub(book: GutenbergBook):
+    """Download and process the EPUB file."""
+    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(book.title + ".epub"))
+    url = book.formats["application/epub+zip"]
+    logger.info("Downloading EPUB from URL: {}".format(url))
+    path, _ = download_file(url, file_path)
+    book_metadata = make_book_metadata(book)
+    logger.info(book_metadata)
+    return load_and_process_epub(path, book_metadata)
+
+async def save_and_process_epub(file: UploadFile):
+    """Save and process the EPUB file."""
+    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+    cover_url = extract_cover_image(file_path).replace("data/session/" , "cover/")
+    book = GutenbergBook(title= secure_filename(file.filename.replace(".epub", "")), id = 0, formats={"image/jpeg": cover_url, "application/epub+zip": file_path})
+    return load_and_process_epub(file_path, make_book_metadata(book))
+
+def load_and_process_epub(file_path: Union[str, bytes, os.PathLike], book: BookMetadata):
+    """Load and process the EPUB file."""
+    logger.info("Loading document...")
+    config = EPUBProcessingConfig(
+        file_path=file_path,
+        percentage=100
+    )
+    epub_chain = EPUBPartialLoader(config)
+    result = epub_chain({"input": None})
+
+    logger.info(f"Selected Text (up to {config.percentage}% of the content):")
+
+    splits = split_documents_with_positions(result)
+    vectorize_documents(splits, book)
+    return result
 
 class EPUBProcessingConfig(BaseModel):
     file_path: str

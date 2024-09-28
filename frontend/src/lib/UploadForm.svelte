@@ -23,7 +23,7 @@
                     dispatch("new-book");
                 }
                 else {
-                    importRequest.error = String(response.error);
+                    importRequest.error = JSON.stringify(response.error);
                 }
             } 
             catch (error) {

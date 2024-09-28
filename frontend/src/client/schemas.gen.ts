@@ -32,23 +32,53 @@ export const Body_upload_file_upload_file_postSchema = {
     title: 'Body_upload_file_upload_file_post'
 } as const;
 
-export const BookSchema = {
+export const BookFormatsSchema = {
+    properties: {
+        'application/epub+zip': {
+            type: 'string',
+            title: 'Application/Epub+Zip'
+        },
+        'image/jpeg': {
+            type: 'string',
+            title: 'Image/Jpeg'
+        }
+    },
+    type: 'object',
+    required: ['application/epub+zip', 'image/jpeg'],
+    title: 'BookFormats'
+} as const;
+
+export const BookMetadataSchema = {
     properties: {
         title: {
             type: 'string',
             title: 'Title'
         },
-        formats: {
-            additionalProperties: {
-                type: 'string'
-            },
-            type: 'object',
-            title: 'Formats'
+        uuid: {
+            type: 'string',
+            title: 'Uuid'
+        },
+        authors: {
+            type: 'string',
+            title: 'Authors'
+        },
+        translators: {
+            type: 'string',
+            title: 'Translators'
+        },
+        languages: {
+            type: 'string',
+            title: 'Languages'
+        },
+        cover_url: {
+            type: 'string',
+            title: 'Cover Url',
+            default: ''
         }
     },
     type: 'object',
-    required: ['title', 'formats'],
-    title: 'Book'
+    required: ['title', 'uuid', 'authors', 'translators', 'languages'],
+    title: 'BookMetadata'
 } as const;
 
 export const DocumentSchema = {
@@ -67,6 +97,57 @@ export const DocumentSchema = {
     title: 'Document'
 } as const;
 
+export const GutenbergBookSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        id: {
+            type: 'integer',
+            title: 'Id'
+        },
+        formats: {
+            '$ref': '#/components/schemas/BookFormats'
+        },
+        authors: {
+            items: {
+                '$ref': '#/components/schemas/Person'
+            },
+            type: 'array',
+            title: 'Authors',
+            default: []
+        },
+        translators: {
+            items: {
+                '$ref': '#/components/schemas/Person'
+            },
+            type: 'array',
+            title: 'Translators',
+            default: []
+        },
+        languages: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Languages',
+            default: []
+        },
+        subjects: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Subjects',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['title', 'id', 'formats'],
+    title: 'GutenbergBook'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -79,6 +160,40 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const PersonSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        birth_year: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birth Year'
+        },
+        death_year: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Death Year'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'Person'
 } as const;
 
 export const QuestionSchema = {
