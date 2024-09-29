@@ -1,0 +1,39 @@
+import os
+import sys
+
+from dotenv import load_dotenv
+from ragas.testset.generator import TestsetGenerator
+from ragas.testset.evolutions import simple, reasoning, multi_context
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
+load_dotenv()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from backend.src.rag import answer_question, load_and_process_epub, split_documents_with_positions, vectorize_documents
+
+documents = load_and_process_epub("data/session/Le_comte_de_Monte-Cristo_Tome_I.epub", percentage=100)
+
+print(documents)
+
+
+
+# generator with openai models
+generator_llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
+critic_llm = ChatOpenAI(model="gpt-4")
+embeddings = OpenAIEmbeddings()
+
+generator = TestsetGenerator.from_langchain(
+    generator_llm,
+    critic_llm,
+    embeddings
+)
+
+# generate testset
+raise ValueError("Comment this out to generate a new testset. Be careful if you use a proprietary model, as it may cost a lot of money.")
+testset = generator.generate_with_langchain_docs(documents, test_size=100, distributions={simple: 0.5, reasoning: 0.25, multi_context: 0.25})
+
+testset_df = testset.to_pandas()
+
+print(testset_df)
+
+testset_df.to_csv("data/testset/synthetic_testset.csv", index=False)
