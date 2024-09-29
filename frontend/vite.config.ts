@@ -10,6 +10,7 @@ export default defineConfig({
 		  '/upload-file': 'http://127.0.0.1:8000',
 		  '/status': 'http://127.0.0.1:8000',
 		  '/import-book': 'http://127.0.0.1:8000',
+		  '/cover': 'http://127.0.0.1:8000',
 		}
 	  }
 });

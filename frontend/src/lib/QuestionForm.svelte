@@ -2,9 +2,9 @@
     import { type QuestionRequest } from "./types";
 	import ErrorMessage from "./ErrorMessage.svelte";
 	import Answer from "./Answer.svelte";
-    import { BackendService } from "../client";
+    import { BackendService, type GetBooksResponse } from "../client";
 
-    export let books: string[] = [];
+    export let books: GetBooksResponse;
 
     let question: QuestionRequest = {
         question: "",
@@ -34,7 +34,7 @@
                 question.answer.status = "ok";
             }
             else {
-                question.answer.error = String(response.error);
+                question.answer.error = JSON.stringify(response.error);
                 question.answer.status = "error";
             }
 
@@ -45,7 +45,7 @@
     }
 </script>
 
-{#if books.length > 0}
+{#if books}
     <section id="questions-form">
         <article>
             <h4>Ask Questions</h4>
@@ -56,8 +56,8 @@
                     <select name="book" aria-label="Select" required bind:value={question.book}>
                         <option selected disabled value="">Select a book</option>
                         {#each books as book}
-                        <option value={book}>
-                            {book}
+                        <option value={book.uuid}>
+                            {book.title}
                         </option>
                         {/each}
                     </select>

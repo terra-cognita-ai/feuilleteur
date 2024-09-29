@@ -47,7 +47,7 @@
         }
         else {
             importRequest.status = "error";
-            importRequest.error = String(response.error);
+            importRequest.error = JSON.stringify(response.error);
         }
     }
 </script>
